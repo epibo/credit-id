@@ -1,6 +1,6 @@
-package org.epibo.external.database
+package com.creditid.cid.external.database
 
-import org.epibo.external.database.models._
+import com.creditid.cid.external.database.models._
 import slick.jdbc.JdbcProfile
 
 package object repo {
@@ -9,7 +9,8 @@ package object repo {
 
     import profile.api._
 
-    private final class Organizations(tag: Tag) extends Table[Organization](tag, "organization") {
+    private final class Organizations(tag: Tag)
+        extends Table[Organization](tag, "organization") {
       val orgId = column[Long]("id", O.PrimaryKey, O.AutoInc)
       val chainAddress = column[String]("chain_address")
       val * = (orgId, chainAddress) <> (Organization.tupled, Organization.unapply)
@@ -21,6 +22,4 @@ package object repo {
     val setup = DBIO.seq(schemas.createIfNotExists)
     //val setupFuture = db.run(setup)
   }
-
-
 }

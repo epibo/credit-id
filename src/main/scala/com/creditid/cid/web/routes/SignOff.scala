@@ -1,9 +1,9 @@
-package org.epibo.web.routes
+package com.creditid.cid.web.routes
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
-import org.epibo.web.models._
+import com.creditid.cid.web.models._
 import akka.http.scaladsl.server.Directives._
 import akka.util.Timeout
 import cats.implicits._

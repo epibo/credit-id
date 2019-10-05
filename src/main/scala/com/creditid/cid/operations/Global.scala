@@ -1,4 +1,4 @@
-package org.epibo.operations
+package com.creditid.cid.operations
 
 import akka.actor.{Actor, Props}
 

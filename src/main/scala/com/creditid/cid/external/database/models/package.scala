@@ -1,4 +1,4 @@
-package org.epibo.external.database
+package com.creditid.cid.external.database
 
 package object models {
 

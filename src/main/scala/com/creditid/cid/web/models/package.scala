@@ -1,4 +1,4 @@
-package org.epibo.web
+package com.creditid.cid.web
 
 import cats.kernel.Eq
 import io.circe.generic.JsonCodec

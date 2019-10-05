@@ -1,4 +1,4 @@
-package org.epibo.web
+package com.creditid.cid.web
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.server.Route

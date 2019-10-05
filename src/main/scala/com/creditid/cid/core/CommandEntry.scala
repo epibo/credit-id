@@ -1,4 +1,4 @@
-package org.epibo.core
+package com.creditid.cid.core
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
@@ -11,9 +11,9 @@ import monix.eval.Task
 import org.backuity.clist.{Command, opt}
 import akka.http.scaladsl.server.Route
 import cats.implicits._
-import org.epibo.external.database.repo
-import org.epibo.operations.Global
-import org.epibo.web.routes
+import com.creditid.cid.external.database.repo
+import com.creditid.cid.operations.Global
+import com.creditid.cid.web.routes
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -28,7 +28,7 @@ sealed abstract class CommandEntry(name: String, description: String)
 object CommandEntry extends Enum[CommandEntry] {
   override val values = findValues
 
-  case object Run extends CommandEntry("run", "start application") with  StrictLogging{
+  case object Run extends CommandEntry("run", "start application") with StrictLogging {
     val enviroments = for {
       _ <- Resource.make(Task(logger.info("App starting")))(_ => Task(logger.info("App stopping")))
       system <- Resource.make(Task(ActorSystem("credit-id")))(s => Task(s.terminate()))
@@ -41,15 +41,15 @@ object CommandEntry extends Enum[CommandEntry] {
       val (httpHost, httpPort) = (httpConfig.getString("host"), httpConfig.getInt("port"))
 
       implicit val (system, mat, db) = resource
-      implicit val operations:ActorRef = system.actorOf(Global.props);
+      implicit val operations:ActorRef = system.actorOf(Global.props)
         for {
           h <- Task.defer(Task.fromFuture(Http().bindAndHandle(routes.all, httpHost, httpPort)))
           _ <- Task(logger.info(s"Checkout http://localhost:8080/hello\nPress RETURN to stop...")) *> Task(StdIn.readLine())
           done <- Task(h.unbind())
         } yield done
-     
+
     }
   }
 
-  
+
 }
