@@ -2,21 +2,45 @@ name := "credit-id"
 
 version := "1.0"
 
-scalaVersion := "2.13.1"
-
-enablePlugins(JmhPlugin)
-enablePlugins(TestNGPlugin)
-javacOptions ++= Seq("-source", "11", "-target", "11")
-compileOrder := CompileOrder.JavaThenScala
+scalaVersion := "2.12.10"
 parallelExecution in Test := false
 
-libraryDependencies ++= typelevel ++ reactive ++ validation ++ auxiliary ++ external
+addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3")
+addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.0")
+addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full)
 
-lazy val typelevel = cats ++ shapeless ++ monix
-lazy val reactive = akka ++ http ++ circe
-lazy val external = slick
-lazy val auxiliary = logs ++ enums ++ args ++ validation
+scalacOptions ++= Seq(
+  "-deprecation",
+  "-encoding", "UTF-8",
+  "-language:higherKinds",
+  "-language:postfixOps",
+  "-feature",
+  "-Ypartial-unification",
+  "-Xfatal-warnings",
+)
 
+
+libraryDependencies ++= typelevel ++ auxiliary
+
+lazy val typelevel = cats ++ shapeless ++ monix ++ http4s ++ fetch ++ circe
+
+lazy val auxiliary = logs ++ enums ++ args ++ validation ++ config
+
+lazy val http4s = {
+  val Http4sVersion = "0.20.11"
+  Seq(
+    "org.http4s"      %% "http4s-prometheus-metrics" % Http4sVersion,
+    "org.http4s"      %% "http4s-dropwizard-metrics" % Http4sVersion,
+    "org.http4s"      %% "http4s-blaze-server" % Http4sVersion,
+    "org.http4s"      %% "http4s-blaze-client" % Http4sVersion,
+    "org.http4s"      %% "http4s-circe"        % Http4sVersion,
+    "org.http4s"      %% "http4s-dsl"          % Http4sVersion,
+  )
+}
+
+lazy val fetch = {
+  Seq("com.47deg" %% "fetch" % "1.2.0")
+}
 lazy val cats = {
   Seq(
     "org.typelevel" %% "kittens",
@@ -26,20 +50,7 @@ lazy val cats = {
   ).map(_ % "2.0.0")
 }
 
-lazy val slick = {
-  val slickVersion = "3.3.2"
-  Seq(
-    "com.typesafe.slick" %% "slick" % slickVersion,
-    "org.slf4j" % "slf4j-nop" % "1.7.26",
-    "com.typesafe.slick" %% "slick-hikaricp" % slickVersion,
-    "org.postgresql" % "postgresql" % "42.2.8"
-  )
 
-}
-
-lazy val blockchain = {
-  Nil
-}
 
 lazy val shapeless = {
   Seq(
@@ -57,42 +68,9 @@ lazy val validation = {
     "org.scalacheck" %% "scalacheck" % "1.14.0",
     "org.scalatest" %% "scalatest" % "3.0.8",
     "org.scalamock" %% "scalamock" % "4.4.0",
-    "com.storm-enroute" %% "scalameter" % "0.19",
-    "org.testng" % "testng" % "7.0.0",
-    "net.aichler" % "jupiter-interface" % "0.8.2",
-    "org.junit.jupiter" % "junit-jupiter-engine" % "5.5.2"
   ).map(_ % Test)
 }
 
-
-lazy val akka = {
-  val akkaVersion = "2.5.25"
-  Seq(
-    "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-    "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-    "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
-    "com.typesafe.akka" %% "akka-cluster-metrics" % akkaVersion,
-    "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
-    "com.typesafe.akka" %% "akka-persistence" % akkaVersion excludeAll (ExclusionRule(
-      "io.netty"
-    )),
-    "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
-    "com.typesafe.akka" %% "akka-distributed-data" % akkaVersion,
-    "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion,
-    "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
-    "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test
-  )
-}
-
-
-lazy val http = {
-  val akkaHttpVersion = "10.1.9"
-  Seq(
-    "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-    "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion,
-    "de.heikoseeberger" %% "akka-http-circe" % "1.28.0"
-  )
-}
 
 lazy val logs = {
   Seq(
@@ -117,12 +95,16 @@ lazy val enums = {
   )
 }
 
+lazy val config = {
+  Seq("com.github.pureconfig" %% "pureconfig" % "0.12.1")
+}
+
 
 lazy val circe = {
   val circeVersion = "0.12.1"
   Seq(
     "io.circe" %% "circe-core",
     "io.circe" %% "circe-generic",
-    "io.circe" %% "circe-parser"
+    "io.circe" %% "circe-parser",
   ).map(_ % circeVersion)
 }

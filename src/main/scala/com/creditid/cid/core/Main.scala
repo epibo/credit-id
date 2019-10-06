@@ -1,13 +1,11 @@
-package org.epibo.core
-
+package com.creditid.cid.core
 
 import cats.effect._
 import cats.implicits._
-import com.typesafe.config.ConfigFactory
 
 import monix.eval.{Task, TaskApp}
 import org.backuity.clist.Parser
-import org.epibo.web.routes
+
 
 object Main extends TaskApp {
 
@@ -22,8 +20,7 @@ object Main extends TaskApp {
       .withCommands(values: _*) match {
       case Some(Run) =>
         import Run._
-        val config = ConfigFactory.load()
-        enviroments.use(executionLogic(config)).as(ExitCode.Success)
+        stream[Task](scheduler).compile.drain.as(ExitCode.Success)
 
       case None => Task.unit.as(ExitCode.Error)
     }
