@@ -3,13 +3,12 @@ package com.creditid.cid.core
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import fs2.Stream
 import cats.implicits._
-import com.creditid.cid.operations.{Certification, Registration, SignOff, Validation}
 import enumeratum._
 import monix.execution.Scheduler
 import org.backuity.clist._
-import org.epibo.operations._
-import org.epibo.utils.configs.HttpConfig
-import org.epibo.web.routes
+import com.creditid.cid.operations._
+import com.creditid.cid.utils.configs.HttpConfig
+import com.creditid.cid.web.routes
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.server.middleware.GZip
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -33,7 +32,6 @@ object CommandEntry extends Enum[CommandEntry] {
   case object Run extends CommandEntry("run", "start application") {
     val config: HttpConfig = ConfigSource.default.load[HttpConfig].getOrElse(HttpConfig("0.0.0.0",8080))
     def stream[F[_]: ConcurrentEffect](scheduler: Scheduler)(implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
-
       for {
         client <- BlazeClientBuilder[F](ExecutionContext.fromExecutor(scheduler)).stream
         cert = Certification.impl[F]
@@ -54,6 +52,4 @@ object CommandEntry extends Enum[CommandEntry] {
       } yield exitCode
       }.drain
   }
-
-  
 }

@@ -1,6 +1,6 @@
 name := "credit-id"
 
-version := "1.0"
+version := version4DocConsistency
 
 scalaVersion := "2.12.10"
 parallelExecution in Test := false
@@ -108,3 +108,16 @@ lazy val circe = {
     "io.circe" %% "circe-parser",
   ).map(_ % circeVersion)
 }
+
+lazy val docs = project.in(file("cid-docs")) // important: it must not be docs/
+  .settings(
+    mdocVariables := Map(
+      "VERSION" -> version4DocConsistency, // version.value, // 注意这个 version 是 docs project 的 version.
+      "test" -> name.value
+    )
+    //mdocIn := file("mydoc")
+  )
+  //.dependsOn(myproject)
+  .enablePlugins(MdocPlugin)
+
+lazy val version4DocConsistency = "0.1.0"

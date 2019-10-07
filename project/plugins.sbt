@@ -26,3 +26,5 @@ addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.0.4")
 //resolvers += Resolver.jcenterRepo
 //addSbtPlugin("de.johoop" % "sbt-testng-plugin" % "3.1.1")
 //addSbtPlugin("net.aichler" % "sbt-jupiter-interface" % "0.8.2")
+
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.5" )
