@@ -7,8 +7,8 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.10")
 //addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.4.1")
 
 //micro-site/documents
-addSbtPlugin("com.47deg"  % "sbt-microsites" % "0.9.4")
-addSbtPlugin("org.tpolecat" % "tut-plugin" % "0.6.12")
+addSbtPlugin("com.47deg" % "sbt-microsites" % "0.9.4")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.5")
 
 //Docker related
 addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.5.0")
@@ -26,5 +26,3 @@ addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.0.4")
 //resolvers += Resolver.jcenterRepo
 //addSbtPlugin("de.johoop" % "sbt-testng-plugin" % "3.1.1")
 //addSbtPlugin("net.aichler" % "sbt-jupiter-interface" % "0.8.2")
-
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.5" )
