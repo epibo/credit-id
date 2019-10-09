@@ -20,21 +20,21 @@ scalacOptions ++= Seq(
 )
 
 
-libraryDependencies ++= typelevel ++ auxiliary
+libraryDependencies ++= typelevel ++ auxiliary ++ ontSdk
 
 lazy val typelevel = cats ++ shapeless ++ monix ++ http4s ++ fetch ++ circe
 
 lazy val auxiliary = logs ++ enums ++ args ++ validation ++ config
 
 lazy val http4s = {
-  val Http4sVersion = "0.20.11"
+  val http4sVersion = "0.20.11"
   Seq(
-    "org.http4s"      %% "http4s-prometheus-metrics" % Http4sVersion,
-    "org.http4s"      %% "http4s-dropwizard-metrics" % Http4sVersion,
-    "org.http4s"      %% "http4s-blaze-server" % Http4sVersion,
-    "org.http4s"      %% "http4s-blaze-client" % Http4sVersion,
-    "org.http4s"      %% "http4s-circe"        % Http4sVersion,
-    "org.http4s"      %% "http4s-dsl"          % Http4sVersion,
+    "org.http4s"      %% "http4s-prometheus-metrics" % http4sVersion,
+    "org.http4s"      %% "http4s-dropwizard-metrics" % http4sVersion,
+    "org.http4s"      %% "http4s-blaze-server" % http4sVersion,
+    "org.http4s"      %% "http4s-blaze-client" % http4sVersion,
+    "org.http4s"      %% "http4s-circe"        % http4sVersion,
+    "org.http4s"      %% "http4s-dsl"          % http4sVersion,
   )
 }
 
@@ -121,3 +121,11 @@ lazy val docs = project.in(file("cid-docs")) // important: it must not be docs/
   .enablePlugins(MdocPlugin)
 
 lazy val version4DocConsistency = "0.1.0"
+
+
+resolvers += "ontSdk" at "https://mvnrepository.com/"
+resolvers += Resolver.jcenterRepo
+
+lazy val ontSdk = {
+  Seq("com.github.ontio" % "ontology-sdk-java" % "1.0.13")
+}
