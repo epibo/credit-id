@@ -9,7 +9,7 @@ trait Certification[F[_]] {
 }
 
 object Certification {
-  def impl[F[_]: Applicative]: Certification[F] = new Certification[F] {
+  def apply[F[_]: Applicative]: Certification[F] = new Certification[F] {
     override def post(n: Details): F[Option[CID]] = ???
   }
 }

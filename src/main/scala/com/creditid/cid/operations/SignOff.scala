@@ -16,7 +16,7 @@ trait SignOff[F[_]]{
 
 object SignOff {
 
-  def impl[F[_] : Applicative]: SignOff[F] = new SignOff[F] {
+  def apply[F[_] : Applicative]: SignOff[F] = new SignOff[F] {
     override def post(n: OrgKey): F[Option[机构ID]] = ???
 
     override def get(n: 机构ID): F[Option[公钥数组]] = ???

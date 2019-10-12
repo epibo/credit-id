@@ -10,7 +10,7 @@ import org.http4s.dsl.Http4sDsl
 
 package object routes {
 
- final class Routings[F[_]: Sync](dsl: Http4sDsl[F]) {
+ final class Routers[F[_]: Sync](dsl: Http4sDsl[F]) {
   import dsl._
   def records(C: Certification[F]): HttpRoutes[F] = {
       HttpRoutes.of[F] {

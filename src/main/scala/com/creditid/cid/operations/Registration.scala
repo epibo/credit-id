@@ -12,7 +12,7 @@ trait Registration[F[_]] {
 
 object Registration {
 
-  def impl[F[_] : Applicative]: Registration[F] = new Registration[F] {
+  def apply[F[_] : Applicative]: Registration[F] = new Registration[F] {
     override def post(n: Register):  F[Option[CID]] = ???
   }
 }

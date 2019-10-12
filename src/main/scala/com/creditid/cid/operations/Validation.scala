@@ -9,7 +9,7 @@ trait Validation[F[_]]{
 }
 
 object Validation {
-  def impl[F[_] : Applicative]: Validation[F] = new Validation[F] {
+  def apply[F[_] : Applicative]: Validation[F] = new Validation[F] {
     override def post(n: ValidationInfo): F[Option[ValidateResult]] = ???
   }
 
