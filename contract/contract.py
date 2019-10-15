@@ -28,33 +28,33 @@ def Main(operation, args):
         return init(account)
 
     ############################################################
-    if operation == 'org_register':
+    if operation == 'OrgRegister':
         org_id = args[0]
         pubkeys = args[1]
         return OrgRegister(org_id, pubkeys)
 
-    if operation == 'org_upd_pubkey':
+    if operation == 'OrgUpdPubkey':
         org_id = args[0]
         pubkey = args[1]
         return OrgUpdPubkey(org_id, pubkey)
 
-    if operation == 'org_get_pubkeys':
+    if operation == 'OrgGetPubkeys':
         org_id = args[0]
         return OrgGetPubkeys(org_id)
 
     ############################################################
-    if operation == 'cid_register':
+    if operation == 'CidRegister':
         cid = args[0]
         data = args[1]  # 个人信息（严格来说是不能上链的）
         return CidRegister(cid, data)
 
-    if operation == 'cid_record':
+    if operation == 'CidRecord':
         cid = args[0]
         data = args[1]  # 表示记录的数据
         return CidRecord(cid, data)
 
     ############################################################
-    if operation == 'credit_register':
+    if operation == 'CreditRegister':
         cid = args[0]
         org_id = args[1]
         data = args[2]  # 凭证内容（包括：ID、所属 CID 、有效期和其他属性）
@@ -62,13 +62,13 @@ def Main(operation, args):
         # 我们这里没有`链上 ID`的概念。
         return CreditRegister(cid, org_id, data)
 
-    if operation == 'credit_destroy':
+    if operation == 'CreditDestroy':
         cid = args[0]
         org_id = args[1]
         return CreditDestroy(cid, org_id)
 
     ############################################################
-    if operation == 'credit_use':
+    if operation == 'CreditUse':
         cid = args[0]
         org_id = args[1]
         return CreditUse(cid, org_id)
@@ -113,8 +113,8 @@ def OrgUpdPubkey(org_id, pubkey):
         assert org_map
 
         map = {}
-        for k in org_map.keys():
-            map[k] = False
+        for tup in org_map:
+            map[tup[0]] = False
         map[pubkey] = True
 
         Put(context, org_id, Serialize(map))
@@ -129,20 +129,20 @@ def OrgUpdPubkey(org_id, pubkey):
 # TODO: 这个 Notify 有数据。
 #
 def OrgGetPubkeys(org_id):
-    # list = []
+    list = []
     try:
         assert _isOwner()
         assert _isOrgidRegisterd(org_id)
         org_map = Deserialize(Get(GetContext(), org_id))
         assert org_map
         # org_map.items()
-        # for k in org_map.keys():
-        #     list.append((k, org_map[k]))
+        for tup in org_map:
+            list.append(tup)
     except:
         Notify(['org_get_pubkeys', False])
         return False
     else:
-        Notify(['org_get_pubkeys', True, org_map.items()])
+        Notify(['org_get_pubkeys', True, list])
         return True
 
 
@@ -215,7 +215,7 @@ def CreditDestroy(cid, org_id):
         context = GetContext()
         map = Deserialize(Get(context, data_key))
         if not map: map = {}
-        map.pop(org_id)
+        map.remove(org_id)
 
         Put(context, data_key, Serialize(map))
     except:
@@ -252,43 +252,43 @@ def CreditUse(cid, org_id):
 #################################################################################
 
 def init(account):
-    if CheckWitness(account):
-        _loadOwner(False)
-        assert not _isOwnerLoaded()
-        _storeOwner(account)
-        _loadOwner()
-    # 继续往下执行
-    else:
-        Notify(['init', False])
-        return False
-
-    # 但是这样有个问题：是不是调用 native 合约的 initContractAdmin 之后，本合约中的所有函数都不能被除 adminOntID 之外的账户调用。
-    # param = state(adminOntID)
-    # governanceContractAddress = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07')
-    # res = Invoke(0, governanceContractAddress, 'initContractAdmin', [param])
-    # assert res and res == b'\x01'
-
     try:
+        if CheckWitness(account):
+            _loadOwner(False)
+            assert not _isOwnerLoaded()
+            _storeOwner(account)
+            _loadOwner()
+        # 继续往下执行
+        else:
+            Notify(['init', False])
+            return False
+
+        # 但是这样有个问题：是不是调用 native 合约的 initContractAdmin 之后，本合约中的所有函数都不能被除 adminOntID 之外的账户调用。
+        # param = state(adminOntID)
+        # governanceContractAddress = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07')
+        # res = Invoke(0, governanceContractAddress, 'initContractAdmin', [param])
+        # assert res and res == b'\x01'
+
         # init list
         # list1 = [1,2,3]
         # list1Info = Serialize(list1)
         # Put(GetContext(), LISTKEY, list1Info)
 
         # init map
-        cid_map = {
-            'test_key': 'cid_string'
-        }
-        org_map = {
-            'test_key': 'org_id_string'
-        }
-        context = GetContext()
+        # cid_map = {
+        #     'test_key': 'cid_string'
+        # }
+        # org_map = {
+        #     'test_key': 'org_id_string'
+        # }
+        # context = GetContext()
         # Put(context, MAP_CID_GLOBAL_KEY, Serialize(cid_map))
         # Put(context, MAP_ORG_GLOBAL_KEY, Serialize(org_map))
     except:
-        Notify('init', False)
+        Notify(['init', False])
         return False
     else:
-        Notify('init', True)
+        Notify(['init', True])
         return True
 
 
