@@ -1,7 +1,7 @@
 package com.creditid.cid
 
 import com.alibaba.fastjson.JSON
-import com.creditid.cid.client.ContractCodes.ABI_JSON
+import com.creditid.cid.client.models.ABI_JSON
 import com.github.ontio.OntSdk
 import com.github.ontio.account.Account
 import com.github.ontio.smartcontract.neovm.abi.AbiInfo
