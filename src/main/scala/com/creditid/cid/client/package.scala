@@ -9,6 +9,7 @@ import com.creditid.cid.client.ContractCodes._
 import com.github.ontio.core.payload.DeployCode
 import com.github.ontio.core.transaction.Transaction
 
+import scala.collection.{GenTraversableOnce, TraversableOnce}
 import scala.collection.convert.ImplicitConversionsToScala.`list asScalaBuffer`
 
 /**
@@ -34,10 +35,10 @@ package object client {
 
   ontSdk.signTx(transaction, Array(Array(account)))
   val txHex = Helper.toHexString(transaction.toArray)
-
-  println(transaction.hash.toString)
   val result = ontSdk.getConnect.syncSendRawTransaction(txHex)
-  System.out.println(result)
+
+  println(transaction.hash)
+  println(result)
   val txhash = transaction.hash.toHexString
 
   // println(ontSdk.getConnect().getMemPoolTxCount());
@@ -63,18 +64,26 @@ package object client {
       }.address, PASSWORD)
   }
 
-  lazy val ontSdk = {
-    val httpAddr = "http://" + (if (TEST_MODE) {
+  lazy val ontSdk: OntSdk = {
+    val ip = if (TEST_MODE) {
       val array = Array("120.79.231.116", "120.79.147.72", "120.77.45.30", "120.79.80.65")
-      array((math.random() * 4).toInt)
+      array((math.random * 4).toInt)
     } else {
       // FIXME: 待完整
       "x"
-    })
+    }
 
-    val restUrl = httpAddr + ":" + "20334"
-    val rpcUrl = httpAddr + ":" + "20336"
-    val wsUrl = httpAddr + ":" + "20335"
+    implicit class AsTuple[A](seq: Seq[A]) {
+      @inline def asTup3: (A, A, A) = (seq(0), seq(1), seq(2))
+    }
+
+    val (restUrl, wsUrl, rpcUrl) = Seq.fill(3)("http://" + ip + ":").zipWithIndex.map { elem =>
+      elem._1 + (20334 + elem._2)
+    }.asTup3
+
+    //    val restUrl = "http://" + ip + ":" + "20334"
+    //    val rpcUrl = "http://" + ip + ":" + "20336"
+    //    val wsUrl = "http://" + ip + ":" + "20335"
 
     val sdk = OntSdk.getInstance
     sdk.setRpc(rpcUrl)
