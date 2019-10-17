@@ -22,10 +22,10 @@ _owner = [b'\x00']
 
 
 def Main(operation, args):
-    if operation == 'init':
+    if operation == 'Init':
         # 把参数的字符串转换为字节数组
         account = _toBytes(args[0])
-        return init(account)
+        return Init(account)
 
     ############################################################
     if operation == 'OrgRegister':
@@ -96,10 +96,10 @@ def OrgRegister(org_id, pubkeys):
 
         Put(GetContext(), org_id, Serialize(map))
     except:
-        Notify(['org_register', False])
+        Notify(['OrgRegister', org_id, False])
         return False
     else:
-        Notify(['org_register', True])
+        Notify(['OrgRegister', org_id, True])
         return True
 
 
@@ -119,10 +119,10 @@ def OrgUpdPubkey(org_id, pubkey):
 
         Put(context, org_id, Serialize(map))
     except:
-        Notify(['org_upd_pubkey', False])
+        Notify(['OrgUpdPubkey', org_id, False])
         return False
     else:
-        Notify(['org_upd_pubkey', True])
+        Notify(['OrgUpdPubkey', org_id, True])
         return True
 
 
@@ -139,10 +139,10 @@ def OrgGetPubkeys(org_id):
         for tup in org_map:
             list.append(tup)
     except:
-        Notify(['org_get_pubkeys', False])
+        Notify(['OrgGetPubkeys', org_id, False])
         return False
     else:
-        Notify(['org_get_pubkeys', True, list])
+        Notify(['OrgGetPubkeys', org_id, True, list])
         return True
 
 
@@ -155,10 +155,10 @@ def CidRegister(cid, data):
 
         Put(GetContext(), cid, data)
     except:
-        Notify(['cid_register', False])
+        Notify(['CidRegister', cid, False])
         return False
     else:
-        Notify(['cid_register', True])
+        Notify(['CidRegister', cid, True])
         return True
 
 
@@ -175,10 +175,10 @@ def CidRecord(cid, data):
 
         Put(context, data_key, Serialize(record))
     except:
-        Notify(['cid_record', False])
+        Notify(['CidRecord', cid, False])
         return False
     else:
-        Notify(['cid_record', True])
+        Notify(['CidRecord', cid, True])
         return True
 
 
@@ -198,10 +198,10 @@ def CreditRegister(cid, org_id, data):
 
         Put(context, data_key, Serialize(map))
     except:
-        Notify(['credit_register', False])
+        Notify(['CreditRegister', cid, False])
         return False
     else:
-        Notify(['credit_register', True])
+        Notify(['CreditRegister', cid, True])
         return True
 
 
@@ -219,10 +219,10 @@ def CreditDestroy(cid, org_id):
 
         Put(context, data_key, Serialize(map))
     except:
-        Notify(['credit_destroy', False])
+        Notify(['CreditDestroy', cid, False])
         return False
     else:
-        Notify(['credit_destroy', True])
+        Notify(['CreditDestroy', cid, True])
         return True
 
 
@@ -242,16 +242,16 @@ def CreditUse(cid, org_id):
         map = Deserialize(Get(context, data_key))
         if not map: map = {}
     except:
-        Notify(['credit_use', False])
+        Notify(['CreditUse', cid, False])
         return False
     else:
-        Notify(['credit_use', True, map[org_id]])
+        Notify(['CreditUse', cid, True, map[org_id]])
         return True
 
 
 #################################################################################
 
-def init(account):
+def Init(account):
     try:
         if CheckWitness(account):
             _loadOwner(False)
@@ -260,7 +260,7 @@ def init(account):
             _loadOwner()
         # 继续往下执行
         else:
-            Notify(['init', False])
+            Notify(['Init', False])
             return False
 
         # 但是这样有个问题：是不是调用 native 合约的 initContractAdmin 之后，本合约中的所有函数都不能被除 adminOntID 之外的账户调用。
@@ -285,10 +285,10 @@ def init(account):
         # Put(context, MAP_CID_GLOBAL_KEY, Serialize(cid_map))
         # Put(context, MAP_ORG_GLOBAL_KEY, Serialize(org_map))
     except:
-        Notify(['init', False])
+        Notify(['Init', False])
         return False
     else:
-        Notify(['init', True])
+        Notify(['Init', True])
         return True
 
 
