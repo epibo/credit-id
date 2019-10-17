@@ -17,6 +17,7 @@ scalacOptions ++= Seq(
   "-feature",
   "-Ypartial-unification",
   "-Xfatal-warnings",
+  "-Yrangepos"
 )
 
 
@@ -35,6 +36,7 @@ lazy val http4s = {
     "org.http4s"      %% "http4s-blaze-client" % http4sVersion,
     "org.http4s"      %% "http4s-circe"        % http4sVersion,
     "org.http4s"      %% "http4s-dsl"          % http4sVersion,
+    "org.http4s"      %% "http4s-testing"            % http4sVersion % Test,
   )
 }
 
@@ -66,6 +68,7 @@ lazy val monix = {
 lazy val validation = {
   Seq(
     "org.scalacheck" %% "scalacheck" % "1.14.0",
+    "org.specs2" %% "specs2-core" % "4.6.0",
     "org.scalatest" %% "scalatest" % "3.0.8",
     "org.scalamock" %% "scalamock" % "4.4.0",
   ).map(_ % Test)

@@ -1,10 +1,6 @@
 package com.creditid.cid.client
 
-/**
- * @author Wei.Chou
- * @version 1.0, 16/10/2019
- */
-object ContractCodes {
+package object models {
   val ABI_JSON =
     """{
       |"contractHash":"f24ef86664107cd68f71890898d6074898bbe3c4",

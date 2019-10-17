@@ -6,7 +6,6 @@ import cats.implicits._
 import monix.eval.{Task, TaskApp}
 import org.backuity.clist.Parser
 
-
 object Main extends TaskApp {
 
   import CommandEntry._

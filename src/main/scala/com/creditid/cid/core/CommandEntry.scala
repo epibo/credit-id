@@ -3,6 +3,7 @@ package com.creditid.cid.core
 import cats.effect.{ConcurrentEffect, ContextShift, Effect, Timer}
 import fs2.Stream
 import cats.implicits._
+import com.creditid.cid.client.service.OntService
 import enumeratum._
 import monix.execution.Scheduler
 import org.backuity.clist._
@@ -33,18 +34,15 @@ object CommandEntry extends Enum[CommandEntry] {
 
   case object Run extends CommandEntry("run", "start application") {
     val config: HttpConfig = ConfigSource.default.load[HttpConfig].getOrElse(HttpConfig("0.0.0.0", 8080))
-  //  class HttpServer[F[_]: Effect] extends StreamApp[F] {
-
 
     def stream[F[_] : ConcurrentEffect](scheduler: Scheduler)(implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
+      val ontService = OntService.apply("xxxx")
+      val (cert, reg, sign, valid) = (Certification[F], Registration[F], SignOff[F], Validation[F])
+      val ops = new routes.Routers[F](Http4sDsl[F])
+      val services = ops.records(cert) <+> ops.register(reg) <+> ops.signoffs(sign) <+> ops.validation(valid)
+      val finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(CORS(GZip(services orNotFound)))
 
       for {
-        client <- BlazeClientBuilder[F](ExecutionContext.fromExecutor(scheduler)).stream
-        (cert, reg, sign, valid) = (Certification[F], Registration[F], SignOff[F], Validation[F])
-        ops = new routes.Routers[F](Http4sDsl[F])
-        services = ops.records(cert) <+> ops.register(reg) <+> ops.signoffs(sign) <+> ops.validation(valid)
-
-        finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(CORS(GZip(services orNotFound)))
         exitCode <- BlazeServerBuilder[F]
           .bindHttp(config.port, config.host)
           // .withWebSockets()
