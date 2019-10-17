@@ -1,15 +1,11 @@
 package com.creditid.cid
 
 import com.alibaba.fastjson.JSON
+import com.creditid.cid.client.ContractCodes.ABI_JSON
 import com.github.ontio.OntSdk
 import com.github.ontio.account.Account
-import com.github.ontio.common.{Address, Helper}
 import com.github.ontio.smartcontract.neovm.abi.AbiInfo
-import com.creditid.cid.client.ContractCodes._
-import com.github.ontio.core.payload.DeployCode
-import com.github.ontio.core.transaction.Transaction
 
-import scala.collection.{GenTraversableOnce, TraversableOnce}
 import scala.collection.convert.ImplicitConversionsToScala.`list asScalaBuffer`
 
 /**
@@ -19,38 +15,11 @@ import scala.collection.convert.ImplicitConversionsToScala.`list asScalaBuffer`
 package object client {
   val TEST_MODE = true
 
-  val abinfo = JSON.parseObject(ABI_JSON, classOf[AbiInfo])
-  val address = Address.AddressFromVmCode(VM_CODE).toHexString
-
   // `address`是小端，`hash`是大端。如果要向合约地址转账，就要使用`hash`。
-  assert(address == abinfo.getHash.reverse)
+  lazy val contractAddress = abinfo.getHash.reverse
+  lazy val abinfo: AbiInfo = JSON.parseObject(ABI_JSON, classOf[AbiInfo])
 
-  ontSdk.vm.setCodeAddress(address)
-
-
-  // 关于 GasPrice, 这里有说明。https://dev-docs.ont.io/#/docs-cn/smartcontract/01-started
-  val transaction: Transaction = ontSdk.vm.makeDeployCodeTransaction(VM_CODE,
-    true, "credit_id", "v1.0", "cid.org", "iots.im@qq.com", "cid.org",
-    account.getAddressU160.toBase58, ontSdk.DEFAULT_DEPLOY_GAS_LIMIT, 500)
-
-  ontSdk.signTx(transaction, Array(Array(account)))
-  val txHex = Helper.toHexString(transaction.toArray)
-  val result = ontSdk.getConnect.syncSendRawTransaction(txHex)
-
-  println(transaction.hash)
-  println(result)
-  val txhash = transaction.hash.toHexString
-
-  // println(ontSdk.getConnect().getMemPoolTxCount());
-  // println(ontSdk.getConnect().getMemPoolTxState(txhash));
-  Thread.sleep(6000)
-
-  val t: DeployCode = ontSdk.getConnect.getTransaction(txhash).asInstanceOf[DeployCode]
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  lazy val account: com.github.ontio.account.Account = {
+  lazy val account: Account = {
     val wltMgr = ontSdk.getWalletMgr
     wltMgr.getAccount(
       // 下面的返回值类型是：
