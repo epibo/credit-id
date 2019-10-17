@@ -5,8 +5,7 @@
 _a. 机构登记_  
  
 ```http request
-method: POST
-route: /org_register
+POST /org_register
 
 params:
     org_id  -> 机构 ID
@@ -20,8 +19,7 @@ response:
 _b. 公钥更新_  
  
 ```http request
-method: POST
-route: /org_upd_pubkey
+POST /org_upd_pubkey
 
 params:
     org_id  -> 机构 ID
@@ -35,8 +33,7 @@ response:
 _c. Get 机构 ID 对应的公钥数组_  
  
 ```http request
-method: GET
-route: /org_get_pubkeys
+GET /org_get_pubkeys
 
 params:
     org_id  -> 机构 ID
@@ -49,8 +46,7 @@ response:
 _a. CID 登记_  
 
 ```http request
-method: POST
-route: /cid_register
+POST /cid_register
 
 params:
     cid  -> CID
@@ -64,8 +60,7 @@ response:
 _b. 操作记录_  
 
 ```http request
-method: POST
-route: /cid_record
+POST /cid_record
 
 params:
     cid  -> CID
@@ -82,8 +77,7 @@ response:
 _a. 凭证登记_  
 
 ```http request
-method: POST
-route: /credit_register
+POST /credit_register
 
 params:
     cid    -> CID
@@ -100,8 +94,7 @@ response:
 _b. 注销凭证_（凭证 -> invalid）  
 
 ```http request
-method: POST
-route: /credit_destroy
+POST /credit_destroy
 
 params:
     cid    -> CID*
@@ -116,8 +109,7 @@ response:
 _a. 验证凭证_  
 
 ```http request
-method: GET
-route: /credit_use
+GET /credit_use
 
 params:
     cid    -> CID*
@@ -136,8 +128,7 @@ response:
 _b. 随机数_  
 
 ```http request
-method: GET
-route: /random
+GET /random
 
 params:
     usage -> `credit_use/???`（目前仅有一个用途`credit_use`）
