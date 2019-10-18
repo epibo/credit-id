@@ -10,10 +10,13 @@ POST /org_register
 params:
     org_id  -> 机构 ID
     pubkeys -> 公钥数组（只有最后一个公钥有效）
-    sign    -> 签名（`pubKey[].map(->privKey).foreach(sign(机构 ID))`）
+    sign    -> 签名（`pubKey[].map(->privKey).foreach(sign(org_id))`）
 
 response:
-    0x01 && OK(200)
+    OK(200) && {
+        0x1 -> 成功
+        0x2 -> 验签失败
+    }
 ```
 
 _b. 公钥更新_  
@@ -24,10 +27,13 @@ POST /org_upd_pubkey
 params:
     org_id  -> 机构 ID
     pubkey  -> 公钥
-    sign    -> 签名（`pubKey.map(->privKey).foreach(sign(机构 ID))`）
+    sign    -> 签名（`pubKey.map(->privKey).foreach(sign(org_id))`）
 
 response:
-    0x01 && OK(200)
+    OK(200) && {
+        0x1 -> 成功
+        0x2 -> 验签失败
+    }
 ```
 
 _c. Get 机构 ID 对应的公钥数组_  
@@ -39,7 +45,10 @@ params:
     org_id  -> 机构 ID
 
 response:
-    {pubkeys: [...]} && OK(200)
+    OK(200) && {
+        { pubkeys: [...] }
+        0x2 -> 验签失败
+    }
 ```
 
 **2. 个人注册**  
@@ -51,10 +60,13 @@ POST /cid_register
 params:
     cid  -> CID
     data -> 个人信息
-    sign -> 签名（`sign(hash(CID + data))`）
+    sign -> 签名（`sign(hash(cid + data))`）
 
 response:
-    0x01 && OK(200)
+    OK(200) && {
+        0x1 -> 成功
+        0x2 -> 验签失败
+    }
 ```
 
 _b. 操作记录_  
@@ -65,10 +77,13 @@ POST /cid_record
 params:
     cid  -> CID
     data -> 记录
-    sign -> 签名（`sign(hash(CID + data))`）
+    sign -> 签名（`sign(hash(cid + data))`）
 
 response:
-    0x01 && OK(200)
+    OK(200) && {
+        0x1 -> 成功
+        0x2 -> 验签失败
+    }
 ```
 
 **3. 凭证签发**  
@@ -83,10 +98,13 @@ params:
     cid    -> CID
     org_id -> 机构 ID
     data   -> 凭证内容（包括：ID、所属 CID 、有效期和其他属性）
-    sign   -> 签名（`sign(hash(CID + 机构 ID + 凭证内容))`）
+    sign   -> 签名（`sign(hash(cid + org_id + data))`）
 
 response:
-    0x01 && OK(200)*
+    OK(200) && {
+        0x1 -> 成功
+        0x2 -> 验签失败
+    }
 ```
 > 合约中没有 **凭证的`链上 ID`** 这个概念。
 > 以下有“*”标记的就是修订过的。
@@ -99,10 +117,13 @@ POST /credit_destroy
 params:
     cid    -> CID*
     org_id -> 机构 ID*
-    sign   -> 签名（`sign(hash(CID + 机构 ID))`）*
+    sign   -> 签名（`sign(hash(cid + org_id))`）*
 
 response:
-    0x01 && OK(200)
+    OK(200) && {
+        0x1 -> 成功
+        0x2 -> 验签失败
+    }
 ```
 
 **4. 凭证使用**  
@@ -114,15 +135,17 @@ GET /credit_use
 params:
     cid    -> CID*
     org_id -> 机构 ID*
-    sign   -> 签名（`sign(random + CID + 机构 ID)`）*
+    sign   -> 签名（`sign(random + cid + org_id)`）*
 
 response:
-    {
-        status: valid/not exist/invalid,
-        credit: {
-            与 /credit_register 接口的 data 属性一致。
+    OK(200) && {
+        { status: valid/not exist/invalid,
+          credit: {
+             与 /credit_register 接口的 data 属性一致。
+          }
         }
-    } && OK(200)
+        0x2 -> 验签失败
+    }
 ```
 
 _b. 随机数_  
@@ -134,5 +157,5 @@ params:
     usage -> `credit_use/???`（目前仅有一个用途`credit_use`）
 
 response:
-    random && OK(200)
+    OK(200) && random
 ```
