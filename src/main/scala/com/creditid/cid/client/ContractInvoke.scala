@@ -13,7 +13,7 @@ object ContractInvoke {
 
   /**
    * @return 如果通过【非】`websocket`方式发送交易，则无论`preExec`值为`true/false`，都返回交易`hash`。
-   *         如果通过`websocket`方式发送交易，则监听到
+   *         如果通过`websocket`方式发送交易，则监听到`Notify`，其结构参见`HandleNotify`。
    */
   //{"name":"Init","parameters":[{"name":"account","type":""}
   def Init(): String = {
