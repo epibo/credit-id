@@ -1,5 +1,6 @@
 package com.creditid.cid.client.service
 
+import cats.Foldable
 import cats.syntax._
 import cats.implicits._
 import cats.effect._
@@ -36,29 +37,23 @@ object OntService {
 
     override def accountOf(label: String, password: String): F[Account] = {
       ontHost.walletMgr.use { walletMgr =>
-        def walletAcc: F[F[WalletAccount]] = for {
-          walAcs <- Sync[F].delay(ontHost.accountsFrom(walletMgr))
+        def createAccount = for {
+          wltAcc <- Sync[F].delay(walletMgr.createAccount(label, password))
+          _ <- Sync[F].delay(walletMgr.writeWallet())
         } yield {
-          if (walAcs.exists(_.label == label)) {
-            Sync[F].delay(walAcs.find(_.label == label).get)
-          } else {
-            for {
-              wltAcc <- Sync[F].delay(walletMgr.createAccount(label, password))
-              _ <- Sync[F].delay(walletMgr.writeWallet())
-            } yield {
-              wltAcc
-            }
-          }
+          wltAcc
         }
 
         for {
-          fAcc <- walletAcc
-          wAcc <- fAcc
+          walAcs <- Sync[F].delay(ontHost.accountsFrom(walletMgr).toList)
+          wAcc <- Foldable[List].find(walAcs)(_.label == label).fold(createAccount)(Sync[F].pure(_))
         } yield {
           walletMgr.getAccount(wAcc.address, password)
         }
+
       }
     }
+
 
     override def deploy(tx: DeployCode): F[DeployCode] = {
       val txHex = Helper.toHexString(tx.toArray)
