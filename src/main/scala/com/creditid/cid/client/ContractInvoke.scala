@@ -14,7 +14,10 @@ object ContractInvoke {
   val GAS_LIMIT = ontSdk.DEFAULT_DEPLOY_GAS_LIMIT
   val GAS_PRICE = 500
 
-  def deployCode(): Unit = {
+  /**
+   * @return （成功/失败，txHashHex）
+   */
+  def deployCode(): (Boolean, String) = {
     lazy val addrFromVmCode = Address.AddressFromVmCode(VM_CODE).toHexString
 
     assert(addrFromVmCode == contractAddress)
@@ -30,18 +33,19 @@ object ContractInvoke {
     val txHex = Helper.toHexString(transaction.toArray)
     // `sendRawTransactionPreExec()`在接收交易的主机单机上预执行，以获得交易所需的`Gas`。
 
+    val txHash = transaction.hash.toHexString
     // FIXME: 该方法会`block`线程，待整改。
-    val result = ontSdk.getConnect.syncSendRawTransaction(txHex)
+    val success = ontSdk.getConnect.sendRawTransaction(txHex)
+    (success, txHash)
 
     // println(transaction.hash)
     // println(result)
-    // val txhash = transaction.hash.toHexString
 
     // println(ontSdk.getConnect.getMemPoolTxCount);
-    // println(ontSdk.getConnect.getMemPoolTxState(txhash));
+    // println(ontSdk.getConnect.getMemPoolTxState(txHash));
     // Thread.sleep(6000)
     //
-    // val deploy: DeployCode = ontSdk.getConnect.getTransaction(txhash).asInstanceOf[DeployCode]
+    // val deploy: DeployCode = ontSdk.getConnect.getTransaction(txHash).asInstanceOf[DeployCode]
     // println(deploy.txType.value & 0xff)
     // println(deploy.version)
   }

@@ -4,11 +4,13 @@ import cats.{Applicative, Foldable}
 import cats.syntax._
 import cats.implicits._
 import cats.effect._
+import cats.implicits._
 import com.creditid.cid.client.Ont
 import com.github.ontio.account.Account
 import com.github.ontio.common.Helper
 import com.github.ontio.core.payload.DeployCode
 import com.github.ontio.core.transaction.Transaction
+import com.github.ontio.sdk.wallet.{Account => WalletAccount}
 import com.github.ontio.smartcontract.Vm
 
 import scala.concurrent.duration._
@@ -16,7 +18,10 @@ import scala.concurrent.duration._
 trait OntService[F[_]] {
   def accountOf(label: String, password: String): F[Account]
 
-  def deploy(tx: DeployCode): F[DeployCode]
+  /**
+   * @return （成功/失败，txHashHex）
+   */
+  def deploy(tx: DeployCode): F[(Boolean, String)]
 
   def build(address: String,
             codeString: String,
@@ -53,15 +58,13 @@ object OntService {
       }
     }
 
-
-    override def deploy(tx: DeployCode): F[DeployCode] = {
+    override def deploy(tx: DeployCode): F[(Boolean, String)] = {
       val txHex = Helper.toHexString(tx.toArray)
       for {
-        _ <- ontHost.connection.use(conn => Sync[F].delay(conn.syncSendRawTransaction(txHex)))
-        _ <- Sync[F].delay(Timer[F].sleep(6.seconds))
-        code <- ontHost.connection.use(conn => Sync[F].delay(conn.getTransaction(txHex).asInstanceOf[DeployCode]))
+        bool <- ontHost.connection.use(conn => Sync[F].delay(conn.sendRawTransaction(txHex)))
+        txHash = tx.hash.toHexString
       } yield {
-        code
+        (bool, txHash)
       }
     }
 

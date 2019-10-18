@@ -8,7 +8,11 @@ import com.github.ontio.OntSdk
 import com.github.ontio.core.transaction.Transaction
 import com.github.ontio.sdk.manager.{ConnectMgr, WalletMgr}
 import com.github.ontio.account.Account
+<<<<<<< HEAD
 import com.github.ontio.smartcontract.{NativeVm, NeoVm, Vm, WasmVm}
+=======
+import com.github.ontio.smartcontract.{NeoVm, Vm}
+>>>>>>> 6b64316fdfcbbcc696db0adce2b9ad14e7ce893c
 import com.github.ontio.sdk.wallet.{Account => WalletAccount}
 import shapeless._
 
@@ -35,8 +39,14 @@ private[client] final class Ont[F[_] : Sync](host: String) {
 
   def signTx(tx: Transaction, accounts: Array[Array[Account]]): F[Transaction] = Sync[F].delay(sdk.signTx(tx, accounts))
 
+<<<<<<< HEAD
   val defaultGasLimit: F[Long] = Sync[F].pure(sdk.DEFAULT_DEPLOY_GAS_LIMIT)
   val defaultGasPrice: F[Long] = Sync[F].pure(500)
+=======
+  def defaultGasLimit: F[Long] = Sync[F].pure(sdk.DEFAULT_DEPLOY_GAS_LIMIT)
+
+  def defaultGasPrice: F[Long] = Sync[F].pure(500)
+>>>>>>> 6b64316fdfcbbcc696db0adce2b9ad14e7ce893c
 
   def connection: Resource[F, ConnectMgr] = {
     val conn = Sync[F].delay(sdk.getConnect)
@@ -48,12 +58,25 @@ private[client] final class Ont[F[_] : Sync](host: String) {
     Resource.make(vm)(_ => Sync[F].unit).map { vm => vm.setCodeAddress(address); vm }
   }
 
+<<<<<<< HEAD
   def ofVM(vmType: String): Resource[F, OntVm] = {
     val vm = vmType match {
       case "Native" => Sync[F].delay(Coproduct[OntVm](sdk.nativevm()))
       case "Neo" => Sync[F].delay(Coproduct[OntVm](sdk.neovm()))
       case "Wasm" => Sync[F].delay(Coproduct[OntVm](sdk.wasmvm()))
       case _ => Sync[F].delay(Coproduct[OntVm](sdk.vm()))
+=======
+  def vmTx(): Resource[F, NeoVm] = {
+    val vm = Sync[F].delay {
+      sdk.neovm()
+    }
+    Resource.make(vm)(_ => Sync[F].unit)
+  }
+
+  def walletMgr: Resource[F, WalletMgr] = {
+    val wallet = Sync[F].delay {
+      sdk.getWalletMgr
+>>>>>>> 6b64316fdfcbbcc696db0adce2b9ad14e7ce893c
     }
     Resource.make(vm)(_ => Sync[F].unit)
   }
