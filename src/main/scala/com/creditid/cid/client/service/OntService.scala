@@ -1,12 +1,11 @@
 package com.creditid.cid.client.service
 
-import cats.Foldable
+import cats.{Applicative, Foldable}
 import cats.syntax._
 import cats.implicits._
 import cats.effect._
 import com.creditid.cid.client.Ont
 import com.github.ontio.account.Account
-import com.github.ontio.sdk.wallet.{Account => WalletAccount}
 import com.github.ontio.common.Helper
 import com.github.ontio.core.payload.DeployCode
 import com.github.ontio.core.transaction.Transaction
@@ -81,9 +80,8 @@ object OntService {
         vm.makeDeployCodeTransaction(codeString, true, name, codeVersion, author, email, desp, payer, limit, price)
 
       for {
-        defaultLimit <- ontHost.defaultGasLimit
-        defaultPrice <- ontHost.defaultGasPrice
-        deployCode <- ontHost.vm(address).use(vm => Sync[F].delay(build(vm, defaultLimit, defaultPrice)))
+        (limit,price) <- Applicative[F].tuple2(ontHost.defaultGasLimit, ontHost.defaultGasPrice)
+        deployCode <- ontHost.vm(address).use(vm => Sync[F].delay(build(vm, limit, price)))
       } yield {
         deployCode
       }
