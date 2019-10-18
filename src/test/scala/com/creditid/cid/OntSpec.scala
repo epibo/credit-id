@@ -3,6 +3,7 @@ package com.creditid.cid
 import cats.effect._
 import cats.implicits._
 import com.alibaba.fastjson.JSON
+import com.creditid.cid.client.abinfo
 import com.creditid.cid.client.models.{ABI_JSON, VM_CODE}
 import com.creditid.cid.client.service.OntService
 import com.github.ontio.common.Address
@@ -17,7 +18,7 @@ import scala.concurrent.ExecutionContext
 
 class OntSpec extends Specification with IOMatchers with Http4sMatchers[IO] with Http4sDsl[IO] {
   val executionContext: ExecutionContext = ExecutionContext.Implicits.global
-  val host = "http://" + Seq("120.79.231.116", "120.79.147.72", "120.77.45.30", "120.79.80.65")((math.random() * 4).toInt)
+  val host = Seq("120.79.231.116", "120.79.147.72", "120.77.45.30", "120.79.80.65")((math.random() * 4).toInt)
   val label = "default_account"
   val password = "PASSWORD default " + "abcdefghijklmn".reverse
 
@@ -32,20 +33,22 @@ class OntSpec extends Specification with IOMatchers with Http4sMatchers[IO] with
         address = Address.AddressFromVmCode(VM_CODE).toHexString
         payer = account.getAddressU160.toBase58
         unSignedTx <- ontClient.build(address, VM_CODE, "credit_id", "v1.0", "cid.org", "iots.im@qq.com", "cid.org", payer)
-        signedTx <- ontClient.sign(unSignedTx, Array(Array(account)))
+        signedTx <- ontClient.sign(unSignedTx, account)
+        (success, txHashHex) <- ontClient.deploy(signedTx)
       } yield {
-        signedTx
+        (success, txHashHex)
       }
 
-      execution.unsafeRunSync() must_== ""
+      val (success, txHashHex) = execution.unsafeRunSync()
+
+      success must_== true
     }
 
     "decipher the address from VM code" in {
       val abinfo = JSON.parseObject(ABI_JSON, classOf[AbiInfo])
       val address = Address.AddressFromVmCode(VM_CODE).toHexString
 
-      // `address`是小端，`hash`是大端。如果要向合约地址转账，就要使用`hash`。
-      address must_== abinfo.getHash.reverse
+      abinfo.getHash must_== address
     }
   }
 }

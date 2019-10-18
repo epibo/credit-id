@@ -1,19 +1,14 @@
 package com.creditid.cid.client.service
 
-import cats.{Applicative, Foldable}
-import cats.syntax._
-import cats.implicits._
 import cats.effect._
 import cats.implicits._
+import cats.{Applicative, Foldable}
 import com.creditid.cid.client.Ont
 import com.github.ontio.account.Account
 import com.github.ontio.common.Helper
 import com.github.ontio.core.payload.DeployCode
 import com.github.ontio.core.transaction.Transaction
-import com.github.ontio.sdk.wallet.{Account => WalletAccount}
 import com.github.ontio.smartcontract.Vm
-
-import scala.concurrent.duration._
 
 trait OntService[F[_]] {
   def accountOf(label: String, password: String): F[Account]
@@ -32,7 +27,7 @@ trait OntService[F[_]] {
             desp: String,
             payer: String): F[DeployCode]
 
-  def sign(tx: Transaction, account: Account): F[Transaction]
+  def sign[TX <: Transaction](tx: TX, account: Account): F[TX]
 }
 
 object OntService {
@@ -54,7 +49,6 @@ object OntService {
         } yield {
           walletMgr.getAccount(wAcc.address, password)
         }
-
       }
     }
 
@@ -68,7 +62,7 @@ object OntService {
       }
     }
 
-    override def sign(tx: Transaction, account: Account): F[Transaction] = ontHost.signTx(tx, Array(Array(account)))
+    override def sign[TX <: Transaction](tx: TX, account: Account): F[TX] = ontHost.signTx(tx, Array(Array(account)))
 
     override def build(address: String,
                        codeString: String,
@@ -79,12 +73,13 @@ object OntService {
                        desp: String,
                        payer: String): F[DeployCode] = {
 
+      // 关于 GasPrice, 这里有说明。https://dev-docs.ont.io/#/docs-cn/smartcontract/01-started
       def build(vm: Vm, limit: Long, price: Long) =
         vm.makeDeployCodeTransaction(codeString, true, name, codeVersion, author, email, desp, payer, limit, price)
 
       for {
-        (limit,price) <- Applicative[F].tuple2(ontHost.defaultGasLimit, ontHost.defaultGasPrice)
-        deployCode <- ontHost.vm(address).use(vm => Sync[F].delay(build(vm, limit, price)))
+        (limit, price) <- Applicative[F].tuple2(ontHost.defaultGasLimit, ontHost.defaultGasPrice)
+        deployCode <- ontHost.ofVm(address).use(vm => Sync[F].delay(build(vm.select[Vm].get, limit, price)))
       } yield {
         deployCode
       }

@@ -1,8 +1,5 @@
 package com.creditid.cid.client
 
-import com.creditid.cid.client.models.VM_CODE
-import com.github.ontio.common.{Address, Helper}
-import com.github.ontio.core.transaction.Transaction
 import com.github.ontio.smartcontract.neovm.abi.Parameter.Type
 import com.github.ontio.smartcontract.neovm.abi.{AbiFunction, Parameter}
 
@@ -13,42 +10,6 @@ import com.github.ontio.smartcontract.neovm.abi.{AbiFunction, Parameter}
 object ContractInvoke {
   val GAS_LIMIT = ontSdk.DEFAULT_DEPLOY_GAS_LIMIT
   val GAS_PRICE = 500
-
-  /**
-   * @return （成功/失败，txHashHex）
-   */
-  def deployCode(): (Boolean, String) = {
-    lazy val addrFromVmCode = Address.AddressFromVmCode(VM_CODE).toHexString
-
-    assert(addrFromVmCode == contractAddress)
-
-    ontSdk.vm.setCodeAddress(addrFromVmCode)
-
-    // 关于 GasPrice, 这里有说明。https://dev-docs.ont.io/#/docs-cn/smartcontract/01-started
-    val transaction: Transaction = ontSdk.vm.makeDeployCodeTransaction(VM_CODE,
-      true, "credit_id", "v1.0", "cid.org", "iots.im@qq.com", "cid.org",
-      account.getAddressU160.toBase58, GAS_LIMIT, GAS_PRICE)
-
-    ontSdk.signTx(transaction, Array(Array(account)))
-    val txHex = Helper.toHexString(transaction.toArray)
-    // `sendRawTransactionPreExec()`在接收交易的主机单机上预执行，以获得交易所需的`Gas`。
-
-    val txHash = transaction.hash.toHexString
-    // FIXME: 该方法会`block`线程，待整改。
-    val success = ontSdk.getConnect.sendRawTransaction(txHex)
-    (success, txHash)
-
-    // println(transaction.hash)
-    // println(result)
-
-    // println(ontSdk.getConnect.getMemPoolTxCount);
-    // println(ontSdk.getConnect.getMemPoolTxState(txHash));
-    // Thread.sleep(6000)
-    //
-    // val deploy: DeployCode = ontSdk.getConnect.getTransaction(txHash).asInstanceOf[DeployCode]
-    // println(deploy.txType.value & 0xff)
-    // println(deploy.version)
-  }
 
   /**
    * @return 如果通过【非】`websocket`方式发送交易，则无论`preExec`值为`true/false`，都返回交易`hash`。
