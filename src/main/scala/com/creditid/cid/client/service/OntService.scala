@@ -27,7 +27,7 @@ trait OntService[F[_]] {
             desp: String,
             payer: String): F[DeployCode]
 
-  def sign(tx: Transaction, accounts: Array[Array[Account]]): F[Transaction]
+  def sign(tx: Transaction, account: Account): F[Transaction]
 }
 
 object OntService {
@@ -71,7 +71,7 @@ object OntService {
       }
     }
 
-    override def sign(tx: Transaction, accounts: Array[Array[Account]]): F[Transaction] = ontHost.signTx(tx, accounts)
+    override def sign(tx: Transaction, account: Account): F[Transaction] = ontHost.signTx(tx, Array(Array(account)))
 
     override def build(address: String,
                        codeString: String,
