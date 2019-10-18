@@ -3,17 +3,21 @@ package com.creditid.cid.client
 import cats.syntax._
 import cats.implicits._
 import cats.effect.{Resource, Sync}
+import com.creditid.cid.client.Ont.OntVm
 import com.github.ontio.OntSdk
 import com.github.ontio.core.transaction.Transaction
 import com.github.ontio.sdk.manager.{ConnectMgr, WalletMgr}
 import com.github.ontio.account.Account
-import com.github.ontio.smartcontract.Vm
+import com.github.ontio.smartcontract.{NativeVm, NeoVm, Vm, WasmVm}
 import com.github.ontio.sdk.wallet.{Account => WalletAccount}
+import shapeless._
 
 import collection.JavaConverters._
 import scala.collection.convert.ImplicitConversionsToScala.`list asScalaBuffer`
 
 private[client] object Ont {
+  type OntVm = Vm :+: NativeVm :+: NeoVm :+: WasmVm :+: CNil
+
   def apply[F[_] : Sync](httpAddr: String): Ont[F] = new Ont[F](httpAddr)
 }
 
@@ -31,27 +35,31 @@ private[client] final class Ont[F[_] : Sync](host: String) {
 
   def signTx(tx: Transaction, accounts: Array[Array[Account]]): F[Transaction] = Sync[F].delay(sdk.signTx(tx, accounts))
 
-  def defaultGasLimit: F[Long] = Sync[F].pure(sdk.DEFAULT_DEPLOY_GAS_LIMIT)
-  def defaultGasPrice: F[Long] = Sync[F].pure(500)
+  val defaultGasLimit: F[Long] = Sync[F].pure(sdk.DEFAULT_DEPLOY_GAS_LIMIT)
+  val defaultGasPrice: F[Long] = Sync[F].pure(500)
 
   def connection: Resource[F, ConnectMgr] = {
-    val conn = Sync[F].delay {
-      sdk.getConnect
-    }
+    val conn = Sync[F].delay(sdk.getConnect)
     Resource.make(conn)(_ => Sync[F].unit)
   }
 
   def vm(address: String): Resource[F, Vm] = {
-    val vm = Sync[F].delay {
-      sdk.vm()
-    }
+    val vm = Sync[F].delay(sdk.vm)
     Resource.make(vm)(_ => Sync[F].unit).map { vm => vm.setCodeAddress(address); vm }
   }
 
-  def walletMgr: Resource[F, WalletMgr] = {
-    val wallet = Sync[F].delay {
-      sdk.getWalletMgr
+  def ofVM(vmType: String): Resource[F, OntVm] = {
+    val vm = vmType match {
+      case "Native" => Sync[F].delay(Coproduct[OntVm](sdk.nativevm()))
+      case "Neo" => Sync[F].delay(Coproduct[OntVm](sdk.neovm()))
+      case "Wasm" => Sync[F].delay(Coproduct[OntVm](sdk.wasmvm()))
+      case _ => Sync[F].delay(Coproduct[OntVm](sdk.vm()))
     }
+    Resource.make(vm)(_ => Sync[F].unit)
+  }
+
+  def walletMgr: Resource[F, WalletMgr] = {
+    val wallet = Sync[F].delay(sdk.getWalletMgr)
     Resource.make(wallet)(_ => Sync[F].unit)
   }
 
