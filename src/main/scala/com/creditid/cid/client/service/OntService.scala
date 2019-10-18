@@ -5,6 +5,7 @@ import cats.implicits._
 import cats.effect._
 import com.creditid.cid.client.Ont
 import com.github.ontio.account.Account
+import com.github.ontio.sdk.wallet.{Account => WalletAccount}
 import com.github.ontio.common.Helper
 import com.github.ontio.core.payload.DeployCode
 import com.github.ontio.core.transaction.Transaction
@@ -30,25 +31,31 @@ trait OntService[F[_]] {
 }
 
 object OntService {
-
   def apply[F[_] : Sync : Timer](host: String): OntService[F] = new OntService[F] {
     private val ontHost = Ont.apply[F](host)
 
     override def accountOf(label: String, password: String): F[Account] = {
-      ontHost.wallet.use { walletMgr =>
-        for {
-          walletAccounts <- Sync[F].delay(ontHost.accountsFrom(walletMgr))
+      ontHost.walletMgr.use { walletMgr =>
+        def walletAcc: F[F[WalletAccount]] = for {
+          walAcs <- Sync[F].delay(ontHost.accountsFrom(walletMgr))
         } yield {
-          if (walletAccounts.exists(_.label == label)) {
-            Sync[F].delay(walletMgr.getAccount(label, password))
+          if (walAcs.exists(_.label == label)) {
+            Sync[F].delay(walAcs.find(_.label == label).get)
           } else {
             for {
-              account <- Sync[F].delay(walletMgr.createAccount(label, password))
-              _ <- Sync[F].delay(walletMgr.writeWalletz())
+              wltAcc <- Sync[F].delay(walletMgr.createAccount(label, password))
+              _ <- Sync[F].delay(walletMgr.writeWallet())
             } yield {
-              account
+              wltAcc
             }
           }
+        }
+
+        for {
+          fAcc <- walletAcc
+          wAcc <- fAcc
+        } yield {
+          walletMgr.getAccount(wAcc.address, password)
         }
       }
     }
@@ -75,16 +82,16 @@ object OntService {
                        desp: String,
                        payer: String): F[DeployCode] = {
 
-      def build(vm: Vm, limit: Long) =
-        vm.makeDeployCodeTransaction(codeString, true, name, codeVersion, author, email, desp, payer, limit, 500)
+      def build(vm: Vm, limit: Long, price: Long) =
+        vm.makeDeployCodeTransaction(codeString, true, name, codeVersion, author, email, desp, payer, limit, price)
 
       for {
         defaultLimit <- ontHost.defaultGasLimit
-        deployCode <- ontHost.vm(address).use(vm => Sync[F].delay(build(vm, defaultLimit)))
+        defaultPrice <- ontHost.defaultGasPrice
+        deployCode <- ontHost.vm(address).use(vm => Sync[F].delay(build(vm, defaultLimit, defaultPrice)))
       } yield {
         deployCode
       }
     }
   }
-
 }

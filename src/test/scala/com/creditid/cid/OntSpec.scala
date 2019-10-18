@@ -24,7 +24,6 @@ class OntSpec extends Specification with IOMatchers with Http4sMatchers[IO] with
   implicit val timer: Timer[IO] = IO.timer(executionContext)
   implicit val cs: ContextShift[IO] = IO.contextShift(executionContext)
   val ontClient = OntService.apply(host)
-  
 
   "Ont Client" should {
     "be able sign tx with accounts " in {
@@ -39,7 +38,6 @@ class OntSpec extends Specification with IOMatchers with Http4sMatchers[IO] with
       }
 
       execution.unsafeRunSync() must_== ""
-
     }
 
     "decipher the address from VM code" in {
@@ -50,6 +48,4 @@ class OntSpec extends Specification with IOMatchers with Http4sMatchers[IO] with
       address must_== abinfo.getHash.reverse
     }
   }
-
-
 }

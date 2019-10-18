@@ -28,8 +28,8 @@ package object client {
         val wltAcc = wltMgr.createAccount(LABEL, PASSWORD)
         wltMgr.writeWallet()
         wltAcc
-      } {
-        _
+      } { wac =>
+        wac
       }.address, PASSWORD)
   }
 

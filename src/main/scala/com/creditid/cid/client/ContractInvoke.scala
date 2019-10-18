@@ -1,6 +1,6 @@
 package com.creditid.cid.client
 
-import com.creditid.cid.client.ContractCodes.VM_CODE
+import com.creditid.cid.client.models.VM_CODE
 import com.github.ontio.common.{Address, Helper}
 import com.github.ontio.core.transaction.Transaction
 import com.github.ontio.smartcontract.neovm.abi.Parameter.Type

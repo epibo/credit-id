@@ -7,3 +7,6 @@ project/project
 project/target
 target
 cid-docs
+
+credit_id-ont_wallet.dat
+src/main/scala/TestClient.scala
