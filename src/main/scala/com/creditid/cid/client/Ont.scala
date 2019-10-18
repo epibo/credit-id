@@ -7,7 +7,7 @@ import com.github.ontio.OntSdk
 import com.github.ontio.core.transaction.Transaction
 import com.github.ontio.sdk.manager.{ConnectMgr, WalletMgr}
 import com.github.ontio.account.Account
-import com.github.ontio.smartcontract.Vm
+import com.github.ontio.smartcontract.{NeoVm, Vm}
 import com.github.ontio.sdk.wallet.{Account => WalletAccount}
 
 import collection.JavaConverters._
@@ -32,6 +32,7 @@ private[client] final class Ont[F[_] : Sync](host: String) {
   def signTx(tx: Transaction, accounts: Array[Array[Account]]): F[Transaction] = Sync[F].delay(sdk.signTx(tx, accounts))
 
   def defaultGasLimit: F[Long] = Sync[F].pure(sdk.DEFAULT_DEPLOY_GAS_LIMIT)
+
   def defaultGasPrice: F[Long] = Sync[F].pure(500)
 
   def connection: Resource[F, ConnectMgr] = {
@@ -46,6 +47,13 @@ private[client] final class Ont[F[_] : Sync](host: String) {
       sdk.vm()
     }
     Resource.make(vm)(_ => Sync[F].unit).map { vm => vm.setCodeAddress(address); vm }
+  }
+
+  def vmTx(): Resource[F, NeoVm] = {
+    val vm = Sync[F].delay {
+      sdk.neovm()
+    }
+    Resource.make(vm)(_ => Sync[F].unit)
   }
 
   def walletMgr: Resource[F, WalletMgr] = {
