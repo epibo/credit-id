@@ -3,7 +3,7 @@ package com.creditid.cid.web
 import cats.effect._
 import cats.implicits._
 import com.creditid.cid.operations._
-import com.creditid.cid.web.models._
+import com.creditid.cid.web.models.request._
 import org.http4s._
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.Http4sDsl
@@ -28,7 +28,7 @@ package object routes {
     HttpRoutes.of[F] {
       case req @ POST -> Root / "register" =>
         for {
-          request <- req.as[Register]
+          request <- req.as[org_register]
           result <-  R.post(request)
           resp <- Ok(result.get)
         } yield resp

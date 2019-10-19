@@ -3,14 +3,18 @@ package com.creditid.cid.client.service
 import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Foldable}
+import com.creditid.cid.client.ContractInvoke.ContractBuilding
 import com.creditid.cid.client.Ont
 import com.github.ontio.account.Account
 import com.github.ontio.common.Helper
 import com.github.ontio.core.payload.DeployCode
 import com.github.ontio.core.transaction.Transaction
-import com.github.ontio.smartcontract.Vm
+import com.github.ontio.smartcontract.{NeoVm, Vm}
+
 
 trait OntService[F[_]] {
+
+
   def accountOf(label: String, password: String): F[Account]
 
   /**
@@ -28,6 +32,8 @@ trait OntService[F[_]] {
             payer: String): F[DeployCode]
 
   def sign[TX <: Transaction](tx: TX, account: Account): F[TX]
+
+  def invokeContract(address:String, account: Account, contract: ContractBuilding): F[String]
 }
 
 object OntService {
@@ -84,5 +90,16 @@ object OntService {
         deployCode
       }
     }
+
+
+    override def invokeContract(address:String, account: Account, contract: ContractBuilding): F[String] = {
+      for {
+        (limit, price) <- Applicative[F].tuple2(ontHost.defaultGasLimit, ontHost.defaultGasPrice)
+        tx <- ontHost.ofVm().use(vm => Sync[F].delay(contract.toTx(vm.select[NeoVm].get,address,account,limit,price)))
+      } yield {
+        tx.asInstanceOf[String]
+      }
+    }
+
   }
 }

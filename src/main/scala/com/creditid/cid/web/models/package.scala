@@ -2,11 +2,13 @@ package com.creditid.cid.web
 
 import cats.kernel.Eq
 import io.circe.generic.JsonCodec
-import com.creditid.cid.web.models.ResqCode._
+import enumeratum._
+import enumeratum.values._
 import shapeless.:+:
 
 package object models {
-  type JOBJ = (String, JOBJ :+: String)
+
+  type JOBJ = String
   type JARR = Seq[JOBJ]
   type CID = String
   type 机构ID = String
@@ -16,36 +18,41 @@ package object models {
   type 公钥组 = JARR
   type 凭据 = JOBJ
   type 签名 = String
-  type 凭据状态 = Credit.状态
-  type 返回状态 = ResqCode.tpe
-  type 随机数用途 = Random.用途
-  type 凭据JOBJ = (("status".type, 凭据状态), 凭据)
+  type 凭据状态 = CreditState
+  type 返回状态 = ResqCode
+  type 随机数用途 = RandomUsage
+  type 凭据JOBJ = ((String, 凭据状态), 凭据)
 
-  object Credit extends Enumeration {
-    type 状态 = State
+  sealed abstract class CreditState(val name: String) extends EnumEntry
 
-    case class State(value: String) extends Val
+  object CreditState extends Enum[CreditState] with CirceEnum[CreditState] {
 
-    val 有效 = State("valid")
-    val 无效 = State("invalid")
-    val 不存在 = State("not exist")
+    override val values = findValues
+
+    case object 有效 extends CreditState("valid")
+    case object 无效 extends CreditState("invalid")
+    case object 不存在 extends CreditState("not exist")
   }
 
-  object Random extends Enumeration {
-    type 用途 = Usage
-
-    case class Usage(value: String) extends Val
-
-    val 请求CreditUse接口 = Usage("credit_use")
+  sealed abstract class ResqCode(val value: Int, val name: String)
+      extends IntEnumEntry {
+    def code: Int = value
   }
 
-  object ResqCode extends Enumeration {
-    type tpe = Code
+  object ResqCode extends IntEnum[ResqCode] with IntCirceEnum[ResqCode] {
+    override val values = findValues
 
-    case class Code(code: Int, desc: String) extends Val
+    case object 执行成功 extends ResqCode(0x1, "执行成功")
+    case object 验签失败 extends ResqCode(0x2, "验签失败")
 
-    val 执行成功 = Code(0x1, "执行成功")
-    val 验签失败 = Code(0x2, "验签失败")
+  }
+
+  sealed abstract class RandomUsage(val name: String) extends EnumEntry
+
+  object RandomUsage extends Enum[RandomUsage] with CirceEnum[RandomUsage] {
+    override val values = findValues
+    case object 请求CreditUse接口 extends RandomUsage("credit_use")
+
   }
 
   object request {
@@ -82,26 +89,33 @@ package object models {
 
   object response {
 
+    @JsonCodec
     final case class org_register(state: 返回状态)
 
+    @JsonCodec
     final case class org_upd_pubkey(state: 返回状态)
 
-    final case class org_get_pubkeys(either: Either[验签失败.type, 公钥组])
+    //@JsonCodec
+    final case class org_get_pubkeys(either: Either[ResqCode.验签失败.type , 公钥组])
 
+    @JsonCodec
     final case class cid_register(state: 返回状态)
 
+    @JsonCodec
     final case class cid_record(state: 返回状态)
 
+    @JsonCodec
     final case class credit_register(state: 返回状态)
 
+    @JsonCodec
     final case class credit_destroy(state: 返回状态)
 
-    final case class credit_use(either: Either[验签失败.type, 凭据JOBJ])
+    // @JsonCodec
+    final case class credit_use(either: Either[ResqCode.验签失败.type , 凭据JOBJ])
 
+    @JsonCodec
     final case class random(random: BigInt)
 
   }
-
-  implicit val xxxEq = Eq.fromUniversalEquals[Xxx]
 
 }
