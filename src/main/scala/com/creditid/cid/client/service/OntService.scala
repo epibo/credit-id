@@ -11,10 +11,7 @@ import com.github.ontio.core.payload.DeployCode
 import com.github.ontio.core.transaction.Transaction
 import com.github.ontio.smartcontract.{NeoVm, Vm}
 
-
 trait OntService[F[_]] {
-
-
   def accountOf(label: String, password: String): F[Account]
 
   /**
@@ -33,7 +30,7 @@ trait OntService[F[_]] {
 
   def sign[TX <: Transaction](tx: TX, account: Account): F[TX]
 
-  def invokeContract(address:String, account: Account, contract: ContractBuilding): F[String]
+  def invokeContract(address: String, account: Account, contract: ContractBuilding): F[String]
 }
 
 object OntService {
@@ -76,12 +73,12 @@ object OntService {
                        codeVersion: String,
                        author: String,
                        email: String,
-                       desp: String,
+                       desc: String,
                        payer: String): F[DeployCode] = {
 
       // 关于 GasPrice, 这里有说明。https://dev-docs.ont.io/#/docs-cn/smartcontract/01-started
       def build(vm: Vm, limit: Long, price: Long) =
-        vm.makeDeployCodeTransaction(codeString, true, name, codeVersion, author, email, desp, payer, limit, price)
+        vm.makeDeployCodeTransaction(codeString, true, name, codeVersion, author, email, desc, payer, limit, price)
 
       for {
         (limit, price) <- Applicative[F].tuple2(ontHost.defaultGasLimit, ontHost.defaultGasPrice)
@@ -91,15 +88,13 @@ object OntService {
       }
     }
 
-
-    override def invokeContract(address:String, account: Account, contract: ContractBuilding): F[String] = {
+    override def invokeContract(address: String, account: Account, contract: ContractBuilding): F[String] = {
       for {
         (limit, price) <- Applicative[F].tuple2(ontHost.defaultGasLimit, ontHost.defaultGasPrice)
-        tx <- ontHost.ofVm().use(vm => Sync[F].delay(contract.toTx(vm.select[NeoVm].get,address,account,limit,price)))
+        tx <- ontHost.ofVm().use(vm => Sync[F].delay(contract.toTx(vm.select[NeoVm].get, address, account, limit, price)))
       } yield {
         tx.asInstanceOf[String]
       }
     }
-
   }
 }

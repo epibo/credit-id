@@ -4,10 +4,8 @@ import cats.kernel.Eq
 import io.circe.generic.JsonCodec
 import enumeratum._
 import enumeratum.values._
-import shapeless.:+:
 
 package object models {
-
   type JOBJ = String
   type JARR = Seq[JOBJ]
   type CID = String
