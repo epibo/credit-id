@@ -4,6 +4,7 @@ import cats.effect._
 import com.alibaba.fastjson.JSON
 import com.creditid.cid.client.models.{ABI_JSON, VM_CODE}
 import com.creditid.cid.client.service.OntService
+import com.creditid.cid.operations.ContractOps
 import com.github.ontio.common.Address
 import com.github.ontio.smartcontract.neovm.abi.AbiInfo
 import org.http4s.dsl.Http4sDsl
@@ -17,21 +18,11 @@ class OntSpec extends Specification with IOMatchers with Http4sMatchers[IO] with
 
   implicit val timer: Timer[IO] = IO.timer(executionContext)
   implicit val cs: ContextShift[IO] = IO.contextShift(executionContext)
-  val ontService: OntService[IO] = client.ontService
+  val service: OntService[IO] = client.ontService
 
   "Ont Client" should {
     "be able sign tx with accounts " in {
-      val execution = for {
-        account <- ontService.accountOf(client.LABEL, client.PASSWORD)
-        address = Address.AddressFromVmCode(VM_CODE).toHexString
-        payer = account.getAddressU160.toBase58
-        unSignedTx <- ontService.build(address, VM_CODE, "credit_id", "v1.0", "cid.org", "iots.im@qq.com", "cid.org", payer)
-        signedTx <- ontService.sign(unSignedTx, account)
-        (success, txHashHex) <- ontService.deploy(signedTx)
-      } yield {
-        (success, txHashHex)
-      }
-
+      val execution = ContractOps.apply(service, service.accountOf(client.LABEL, client.PASSWORD)).deploy()
       val (success, txHashHex) = execution.unsafeRunSync()
 
       success must_== true

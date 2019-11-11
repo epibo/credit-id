@@ -3,7 +3,7 @@ package com.creditid.cid.client.service
 import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Foldable}
-import com.creditid.cid.client.ContractInvoke.ContractBuilding
+import com.creditid.cid.client.ContractInvoke.AbiFuncBuilding
 import com.creditid.cid.client.{IfSuccess, Ont, TxHashHex}
 import com.github.ontio.account.Account
 import com.github.ontio.common.Helper
@@ -14,23 +14,32 @@ import com.github.ontio.smartcontract.{NeoVm, Vm}
 trait OntService[F[_]] {
   def accountOf(label: String, password: String): F[Account]
 
-  /**
-   * @return （成功/失败，txHashHex）
-   */
-  def deploy(tx: DeployCode): F[(IfSuccess, TxHashHex)]
-
   def build(address: String,
             codeString: String,
+            payer: String,
             name: String,
             codeVersion: String,
             author: String,
             email: String,
-            desp: String,
-            payer: String): F[DeployCode]
+            desp: String): F[DeployCode]
 
   def sign[TX <: Transaction](tx: TX, account: Account): F[TX]
 
-  def invokeContract(address: String, account: Account, contract: ContractBuilding): F[TxHashHex]
+  /**
+   * 发送交易执行`deploy`操作。
+   * 要看执行是否成功，还要看`waitResult(txHash)`的`Notify`。
+   *
+   * @return （成功/失败，txHashHex）
+   */
+  def invokeContract(address: String, account: Account, contract: AbiFuncBuilding): F[(IfSuccess, TxHashHex)]
+
+  /**
+   * 发送交易执行`deploy`操作。
+   * 要看执行是否成功，还要看`waitResult(txHash)`的`Notify`。
+   *
+   * @return （成功/失败，txHashHex）
+   */
+  def deploy(tx: DeployCode): F[(IfSuccess, TxHashHex)]
 }
 
 object OntService {
@@ -55,27 +64,16 @@ object OntService {
       }
     }
 
-    override def deploy(tx: DeployCode): F[(IfSuccess, TxHashHex)] = {
-      val txHex = Helper.toHexString(tx.toArray)
-      for {
-        // FIXME: `sendRawTransaction`方法会`block`线程，待整改。
-        bool <- ontHost.connection.use(conn => Sync[F].delay(conn.sendRawTransaction(txHex)))
-        txHash = tx.hash.toHexString
-      } yield {
-        (bool, txHash)
-      }
-    }
-
     override def sign[TX <: Transaction](tx: TX, account: Account): F[TX] = ontHost.signTx(tx, Array(Array(account)))
 
     override def build(address: String,
                        codeString: String,
+                       payer: String,
                        name: String,
                        codeVersion: String,
                        author: String,
                        email: String,
-                       desc: String,
-                       payer: String): F[DeployCode] = {
+                       desc: String): F[DeployCode] = {
 
       // 关于 GasPrice, 这里有说明。https://dev-docs.ont.io/#/docs-cn/smartcontract/01-started
       def build(vm: Vm, limit: Long, price: Long) =
@@ -89,12 +87,28 @@ object OntService {
       }
     }
 
-    override def invokeContract(address: String, account: Account, contract: ContractBuilding): F[TxHashHex] = {
+    override def invokeContract(address: String, account: Account, contract: AbiFuncBuilding): F[(IfSuccess, TxHashHex)] = {
       for {
         (limit, price) <- Applicative[F].tuple2(ontHost.defaultGasLimit, ontHost.defaultGasPrice)
-        txHash <- ontHost.ofVm().use(vm => Sync[F].delay(contract.sendTx(vm.select[NeoVm].get, address, account, limit, price)))
+        txHashE <- ontHost.ofVm().use(vm => Sync[F].delay(contract.sendTx(vm.select[NeoVm].get, address, account, limit, price))
+          .attempt) // 注意：此处可能有异常抛出，所以加个`attempt`把它变成`Either[Throwable, Boolean]`。
+        opt = txHashE.toOption
+        bool = opt.isDefined
+        txHash = opt.orNull
       } yield {
-        txHash
+        (bool, txHash)
+      }
+    }
+
+    override def deploy(tx: DeployCode): F[(IfSuccess, TxHashHex)] = {
+      val txHex = Helper.toHexString(tx.toArray)
+      for {
+        boolE <- ontHost.connection.use(conn => Sync[F].delay(conn.sendRawTransaction(txHex))
+          .attempt) // 注意：此处可能有异常抛出，所以加个`attempt`把它变成`Either[Throwable, Boolean]`。
+        bool = boolE.toOption.getOrElse(false)
+        txHash = tx.hash.toHexString
+      } yield {
+        (bool, txHash)
       }
     }
   }

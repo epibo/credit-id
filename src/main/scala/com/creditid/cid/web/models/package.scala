@@ -1,9 +1,8 @@
 package com.creditid.cid.web
 
-import cats.kernel.Eq
-import io.circe.generic.JsonCodec
 import enumeratum._
 import enumeratum.values._
+import io.circe.generic.JsonCodec
 
 package object models {
   type JOBJ = String
@@ -28,12 +27,15 @@ package object models {
     override val values = findValues
 
     case object 有效 extends CreditState("valid")
+
     case object 无效 extends CreditState("invalid")
+
     case object 不存在 extends CreditState("not exist")
+
   }
 
   sealed abstract class ResqCode(val value: Int, val name: String)
-      extends IntEnumEntry {
+    extends IntEnumEntry {
     def code: Int = value
   }
 
@@ -41,6 +43,7 @@ package object models {
     override val values = findValues
 
     case object 执行成功 extends ResqCode(0x1, "执行成功")
+
     case object 验签失败 extends ResqCode(0x2, "验签失败")
 
   }
@@ -49,8 +52,15 @@ package object models {
 
   object RandomUsage extends Enum[RandomUsage] with CirceEnum[RandomUsage] {
     override val values = findValues
+
     case object 请求CreditUse接口 extends RandomUsage("credit_use")
 
+  }
+
+  implicit class Verify(n: AnyRef) {
+    def verified: Boolean = n match {
+      case request.org_register(org_id, pubkeys, sign) => ???
+    }
   }
 
   object request {
@@ -94,7 +104,7 @@ package object models {
     final case class org_upd_pubkey(state: 返回状态)
 
     //@JsonCodec
-    final case class org_get_pubkeys(either: Either[ResqCode.验签失败.type , 公钥组])
+    final case class org_get_pubkeys(either: Either[ResqCode.验签失败.type, 公钥组])
 
     @JsonCodec
     final case class cid_register(state: 返回状态)
@@ -109,7 +119,7 @@ package object models {
     final case class credit_destroy(state: 返回状态)
 
     // @JsonCodec
-    final case class credit_use(either: Either[ResqCode.验签失败.type , 凭据JOBJ])
+    final case class credit_use(either: Either[ResqCode.验签失败.type, 凭据JOBJ])
 
     @JsonCodec
     final case class random(random: BigInt)
