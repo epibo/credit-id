@@ -1,6 +1,7 @@
 package com.creditid.cid.client
 
-import cats.effect.{Sync, Timer}
+import cats.effect._
+import cats.implicits._
 import com.creditid.cid.client
 import com.creditid.cid.client.models.VM_CODE
 import com.github.ontio.account.Account

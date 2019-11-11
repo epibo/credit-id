@@ -14,6 +14,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, GZip, Logger}
+import pureconfig.generic.auto._
 import pureconfig._
 
 sealed abstract class CommandEntry(name: String, description: String)

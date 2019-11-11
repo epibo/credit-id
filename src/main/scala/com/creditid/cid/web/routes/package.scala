@@ -22,23 +22,24 @@ package object routes {
             txHashHex <- R.post(request)
             // TODO: 这期间还要等待`Notify`回应。
 
-
-            //            resp <- Ok(xxx)
-          } yield txHashHex //resp
+            resp <- Ok(txHashHex)
+          } yield resp //resp
 
         case req@POST -> Root / "org_upd_pubkey" =>
           for {
             request <- req.as[org_upd_pubkey]
             txHashHex <- R.post(request)
 
-          } yield ???
+            resp <- Ok(txHashHex)
+          } yield resp //resp
 
         case req@GET -> Root / "org_get_pubkeys" =>
           for {
             request <- req.as[org_get_pubkeys]
             txHashHex <- R.get(request)
 
-          } yield ???
+            resp <- Ok(txHashHex)
+          } yield resp //resp
       }
     }
 
@@ -49,14 +50,16 @@ package object routes {
             request <- req.as[cid_register]
             txHashHex <- R.post(request)
 
-          } yield ???
+            resp <- Ok(txHashHex)
+          } yield resp //resp
 
         case req@POST -> Root / "cid_record" =>
           for {
             request <- req.as[cid_record]
             txHashHex <- R.post(request)
 
-          } yield ???
+            resp <- Ok(txHashHex)
+          } yield resp //resp
       }
     }
 
@@ -68,14 +71,16 @@ package object routes {
             request <- req.as[credit_register]
             txHashHex <- R.post(request)
 
-          } yield ???
+            resp <- Ok(txHashHex)
+          } yield resp //resp
 
         case req@POST -> Root / "credit_destroy" =>
           for {
             request <- req.as[credit_destroy]
             txHashHex <- R.post(request)
 
-          } yield ???
+            resp <- Ok(txHashHex)
+          } yield resp //resp
       }
     }
 
@@ -86,13 +91,15 @@ package object routes {
             request <- req.as[credit_use]
             txHashHex <- R.get(request)
 
-          } yield ???
+            resp <- Ok(txHashHex)
+          } yield resp //resp
 
         case req@GET -> Root / "random" =>
           for {
             request <- req.as[random]
             random <- R.get(request)
-          } yield random
+            resp <- Ok(random)
+          } yield resp //resp
       }
     }
   }
