@@ -1,27 +1,20 @@
 package com.creditid.cid.core
 
-import cats.effect.{ConcurrentEffect, ContextShift, Effect, Timer}
-import fs2.Stream
+import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import cats.implicits._
-import com.creditid.cid.client.service.OntService
-import enumeratum._
-import monix.execution.Scheduler
-import org.backuity.clist._
+import com.creditid.cid.client
 import com.creditid.cid.operations._
 import com.creditid.cid.utils.configs.HttpConfig
 import com.creditid.cid.web.routes
-import com.creditid.cid.web.routes.Routers
-import org.http4s.blaze.http.HttpService
-import org.http4s.client.blaze.BlazeClientBuilder
-import org.http4s.server.middleware.{CORS, GZip, Logger}
-import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.implicits._
+import enumeratum._
+import fs2.Stream
+import monix.execution.Scheduler
+import org.backuity.clist._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.server.HttpMiddleware
-
-import scala.concurrent.ExecutionContext
+import org.http4s.implicits._
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.middleware.{CORS, GZip, Logger}
 import pureconfig._
-import pureconfig.generic.auto._
 
 sealed abstract class CommandEntry(name: String, description: String)
   extends Command(name, description)
@@ -36,10 +29,10 @@ object CommandEntry extends Enum[CommandEntry] {
     val config: HttpConfig = ConfigSource.default.load[HttpConfig].getOrElse(HttpConfig("0.0.0.0", 8080))
 
     def stream[F[_] : ConcurrentEffect](scheduler: Scheduler)(implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
-      val ontService = OntService.apply("xxxx")
-      val (cert, reg, sign, valid) = (Certification[F], Registration[F], SignOff[F], Validation[F])
+      val ontService = client.ontService
+      val (org, cid, credit, use) = (OrgOps(ontService), CidOps(ontService), CreditOps(ontService), CreditUse(ontService))
       val ops = new routes.Routers[F](Http4sDsl[F])
-      val services = ops.records(cert) <+> ops.register(reg) <+> ops.signoffs(sign) <+> ops.validation(valid)
+      val services = ops.orgOps(org) <+> ops.cigOps(cid) <+> ops.creditOps(credit) <+> ops.creditUse(use)
       val finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(CORS(GZip(services orNotFound)))
 
       for {

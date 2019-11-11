@@ -4,7 +4,7 @@ import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Foldable}
 import com.creditid.cid.client.ContractInvoke.ContractBuilding
-import com.creditid.cid.client.Ont
+import com.creditid.cid.client.{IfSuccess, Ont, TxHashHex}
 import com.github.ontio.account.Account
 import com.github.ontio.common.Helper
 import com.github.ontio.core.payload.DeployCode
@@ -17,7 +17,7 @@ trait OntService[F[_]] {
   /**
    * @return （成功/失败，txHashHex）
    */
-  def deploy(tx: DeployCode): F[(Boolean, String)]
+  def deploy(tx: DeployCode): F[(IfSuccess, TxHashHex)]
 
   def build(address: String,
             codeString: String,
@@ -30,7 +30,7 @@ trait OntService[F[_]] {
 
   def sign[TX <: Transaction](tx: TX, account: Account): F[TX]
 
-  def invokeContract(address: String, account: Account, contract: ContractBuilding): F[String]
+  def invokeContract(address: String, account: Account, contract: ContractBuilding): F[TxHashHex]
 }
 
 object OntService {
@@ -55,9 +55,10 @@ object OntService {
       }
     }
 
-    override def deploy(tx: DeployCode): F[(Boolean, String)] = {
+    override def deploy(tx: DeployCode): F[(IfSuccess, TxHashHex)] = {
       val txHex = Helper.toHexString(tx.toArray)
       for {
+        // FIXME: `sendRawTransaction`方法会`block`线程，待整改。
         bool <- ontHost.connection.use(conn => Sync[F].delay(conn.sendRawTransaction(txHex)))
         txHash = tx.hash.toHexString
       } yield {
@@ -88,12 +89,12 @@ object OntService {
       }
     }
 
-    override def invokeContract(address: String, account: Account, contract: ContractBuilding): F[String] = {
+    override def invokeContract(address: String, account: Account, contract: ContractBuilding): F[TxHashHex] = {
       for {
         (limit, price) <- Applicative[F].tuple2(ontHost.defaultGasLimit, ontHost.defaultGasPrice)
-        tx <- ontHost.ofVm().use(vm => Sync[F].delay(contract.toTx(vm.select[NeoVm].get, address, account, limit, price)))
+        txHash <- ontHost.ofVm().use(vm => Sync[F].delay(contract.sendTx(vm.select[NeoVm].get, address, account, limit, price)))
       } yield {
-        tx.asInstanceOf[String]
+        txHash
       }
     }
   }
