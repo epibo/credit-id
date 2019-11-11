@@ -55,7 +55,7 @@ package object routes {
             (success, txHash) <- R.post(request)
 
             resp <- Ok(txHashHex)
-          } yield resp //resp
+          } yield resp
 
         case req@GET -> Root / "org_get_pubkeys" =>
           for {
@@ -63,7 +63,7 @@ package object routes {
             (success, txHash) <- R.get(request)
 
             resp <- Ok(txHashHex)
-          } yield resp //resp
+          } yield resp
       }
     }
 
@@ -75,7 +75,7 @@ package object routes {
             (success, txHash) <- R.post(request)
 
             resp <- Ok(txHashHex)
-          } yield resp //resp
+          } yield resp
 
         case req@POST -> Root / "cid_record" =>
           for {
@@ -83,7 +83,7 @@ package object routes {
             (success, txHash) <- R.post(request)
 
             resp <- Ok(txHashHex)
-          } yield resp //resp
+          } yield resp
       }
     }
 
@@ -96,7 +96,7 @@ package object routes {
             (success, txHash) <- R.post(request)
 
             resp <- Ok(txHashHex)
-          } yield resp //resp
+          } yield resp
 
         case req@POST -> Root / "credit_destroy" =>
           for {
@@ -104,7 +104,7 @@ package object routes {
             (success, txHash) <- R.post(request)
 
             resp <- Ok(txHashHex)
-          } yield resp //resp
+          } yield resp
       }
     }
 
@@ -123,7 +123,7 @@ package object routes {
             request <- req.as[random]
             random <- R.get(request)
             resp <- Ok(random)
-          } yield resp //resp
+          } yield resp
       }
     }
   }

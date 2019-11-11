@@ -48,7 +48,7 @@ package object models {
 
   }
 
-  sealed abstract class RandomUsage(val name: String) extends EnumEntry
+  sealed abstract class RandomUsage(val value: String) extends EnumEntry
 
   object RandomUsage extends Enum[RandomUsage] with CirceEnum[RandomUsage] {
     override val values = findValues

@@ -30,6 +30,13 @@ object CreditUse {
       (success, txHashHex)
     }
 
-    override def get(n: random): F[(IfSuccess, TxHashHex)] = ??? // TODO: 这个不用调合约
+    override def get(n: random): F[(IfSuccess, TxHashHex)] = {
+      n.usage match {
+        case 请求CreditUse接口 => // 把
+          n.usage.value // 放到`session`
+
+          ??? // TODO:
+      }
+    }
   }
 }

@@ -14,7 +14,6 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, GZip, Logger}
-import pureconfig.generic.auto._
 import pureconfig._
 
 sealed abstract class CommandEntry(name: String, description: String)
@@ -26,7 +25,7 @@ sealed abstract class CommandEntry(name: String, description: String)
 object CommandEntry extends Enum[CommandEntry] {
   override val values = findValues
 
-  case object Run extends CommandEntry("run", "start application...") {
+  case object Run extends CommandEntry("start", "start application...") {
     val config: HttpConfig = ConfigSource.default.load[HttpConfig].getOrElse(HttpConfig("0.0.0.0", 8080))
 
     def stream[F[_] : ConcurrentEffect](scheduler: Scheduler)(implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
@@ -34,8 +33,8 @@ object CommandEntry extends Enum[CommandEntry] {
       val account = ontService.accountOf(client.LABEL, client.PASSWORD)
       val ops = new routes.Routers[F](Http4sDsl[F])
 
-      // TODO: 必须在这里阻塞。
       ops.init(ontService, account)
+
       val (org, cid, credit, use) = (OrgOps(ontService, account), CidOps(ontService, account), CreditOps(ontService, account), CreditUse(ontService, account))
       val services = ops.orgOps(org) <+> ops.cigOps(cid) <+> ops.creditOps(credit) <+> ops.creditUse(use)
       val finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(CORS(GZip(services orNotFound)))
