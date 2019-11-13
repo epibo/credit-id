@@ -54,7 +54,7 @@ package object routes {
             request <- req.as[org_upd_pubkey]
             (success, txHash) <- R.post(request)
 
-            resp <- Ok(txHashHex)
+            resp <- Ok(response.org_upd_pubkey().state)
           } yield resp
 
         case req@GET -> Root / "org_get_pubkeys" =>

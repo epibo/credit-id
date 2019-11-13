@@ -92,7 +92,6 @@ package object models {
     @JsonCodec
     final case class random(usage: 随机数用途)
 
-    // TODO: 验签
   }
 
   object response {
