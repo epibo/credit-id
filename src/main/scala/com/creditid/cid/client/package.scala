@@ -12,10 +12,11 @@ import com.github.ontio.smartcontract.neovm.abi.AbiInfo
 package object client {
   type IfSuccess = Boolean
   type TxHashHex = String
+  type Notify = String
 
   val TEST_MODE = true
 
-  def ontService[F[_] : Sync : Timer]: OntService[F] = OntService(HOST)
+  def ontService[F[_] : Sync]: OntService[F] = OntService(HOST)
 
   // 文档说：`address`是小端，`hash`是大端。如果要向合约地址转账，就要使用`hash`。
   // TODO: 但实时并非如此：不能加`reverse`。

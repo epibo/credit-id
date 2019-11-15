@@ -9,6 +9,7 @@ import com.github.ontio.account.Account
 import com.github.ontio.common.Helper
 import com.github.ontio.core.payload.DeployCode
 import com.github.ontio.core.transaction.Transaction
+import com.github.ontio.network.connect.IConnector
 import com.github.ontio.smartcontract.{NeoVm, Vm}
 
 trait OntService[F[_]] {
@@ -40,10 +41,12 @@ trait OntService[F[_]] {
    * @return （成功/失败，txHashHex）
    */
   def deploy(tx: DeployCode): F[(IfSuccess, TxHashHex)]
+
+  def connectorUse[A](f: IConnector => F[A]): F[A]
 }
 
 object OntService {
-  def apply[F[_] : Sync : Timer](host: String): OntService[F] = new OntService[F] {
+  def apply[F[_] : Sync](host: String): OntService[F] = new OntService[F] {
     private val ontHost = Ont.apply[F](host)
 
     override def accountOf(label: String, password: String): F[Account] = {
@@ -91,7 +94,7 @@ object OntService {
       for {
         (limit, price) <- Applicative[F].tuple2(ontHost.defaultGasLimit, ontHost.defaultGasPrice)
         txHashE <- ontHost.ofVm().use(vm => Sync[F].delay(contract.sendTx(vm.select[NeoVm].get, address, account, limit, price))
-          .attempt) // 注意：此处可能有异常抛出，所以加个`attempt`把它变成`Either[Throwable, Boolean]`。
+          .attempt) // 注意：此处可能有异常抛出，所以加个`attempt`把它变成`Either[Throwable, TxHashHex]`。
         opt = txHashE.toOption
         bool = opt.isDefined
         txHash = opt.orNull
@@ -103,13 +106,18 @@ object OntService {
     override def deploy(tx: DeployCode): F[(IfSuccess, TxHashHex)] = {
       val txHex = Helper.toHexString(tx.toArray)
       for {
-        boolE <- ontHost.connection.use(conn => Sync[F].delay(conn.sendRawTransaction(txHex))
-          .attempt) // 注意：此处可能有异常抛出，所以加个`attempt`把它变成`Either[Throwable, Boolean]`。
-        bool = boolE.toOption.getOrElse(false)
+        bool <- ontHost.connection.use { case (conn, _) =>
+          Sync[F].delay(conn.sendRawTransaction(txHex)).handleErrorWith(_ => Sync[F].pure(false))
+        }
         txHash = tx.hash.toHexString
       } yield {
         (bool, txHash)
       }
     }
+
+    override def connectorUse[A](f: IConnector => F[A]): F[A] =
+      ontHost.connection.use { case (_, connector) =>
+        f(connector)
+      }
   }
 }

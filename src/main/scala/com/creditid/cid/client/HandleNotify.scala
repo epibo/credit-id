@@ -1,10 +1,63 @@
 package com.creditid.cid.client
 
+import java.util
+import java.util.concurrent.atomic.AtomicInteger
+
+import cats.effect.{Sync, Timer}
+import cats.implicits._
+import com.creditid.cid.client.service.OntService
+import com.github.ontio.network.connect.IConnector
+import com.github.ontio.sdk.exception.SDKException
+
+import scala.concurrent.duration.DurationInt
+
 /**
  * @author Wei.Chou
  * @version 1.0, 17/10/2019
  */
 object HandleNotify {
+
+  def wait4Result[F[_] : Sync : Timer](service: OntService[F], txHash: TxHashHex)(f: Either[Exception, Option[Notify]] => Unit): F[IfSuccess] = {
+    def isSuccess(either: Either[Exception, Option[Notify]]): IfSuccess = either.getOrElse(None).isDefined
+
+    service.connectorUse { connector =>
+      for {
+        either <- wait4Result(connector, txHash, new AtomicInteger(20))
+        _ = f(either)
+        success = isSuccess(either)
+      } yield success
+    }
+  }
+
+  @throws[Exception]
+  private def wait4Result[F[_] : Sync : Timer](connector: IConnector, txHash: TxHashHex, n: AtomicInteger): F[Either[Exception, Option[Notify]]] = {
+    // 以下代码重构自`ConnectMgr.waitResult(txHash)`
+    def connOps(): Either[Exception, Option[Notify]] = {
+      try {
+        val event = connector.getSmartCodeEvent(txHash)
+        val notify = if (event == null || !event.isInstanceOf[util.Map[_, _]]) {
+          val txState = connector.getMemPoolTxState(txHash) // TODO: 这一句没有看到在哪里用
+          None
+        } else Option(event.asInstanceOf[util.Map[_, _]].get("Notify").asInstanceOf[Notify])
+        Right[Exception, Option[Notify]](notify)
+      } catch {
+        case e: Exception =>
+          if (Seq("UNKNOWN TRANSACTION", "getmempooltxstate").forall(e.getMessage.contains(_))) {
+            Left[Exception, Option[Notify]](new SDKException(e.getMessage))
+          } else Right[Exception, Option[Notify]](None)
+      }
+    }
+
+    for {
+      _ <- Timer[F].sleep(3.seconds)
+      notifyE = connOps()
+      result <- if (notifyE.isLeft) Sync[F].pure(notifyE)
+      else if (notifyE.getOrElse(None).isDefined) Sync[F].pure(notifyE)
+      else if (n.decrementAndGet > 0) wait4Result(connector, txHash, n)
+      else Sync[F].pure[Either[Exception, Option[Notify]]](Right(None))
+    } yield result
+  }
+
   // 合约中调用：
   // Notify(['FunctionName', cid, True/False])
 
@@ -19,12 +72,12 @@ object HandleNotify {
       "State": 1,
       "GasConsumed": 0,
       "Notify": [ // TODO: 就是这个 Notify。
-    {
-      "ContractAddress": "89abcdef0123456789abcdef0123456789abcdef",
-      "States": [
-      "02"
-      ]
-    }
+        {
+          "ContractAddress": "89abcdef0123456789abcdef0123456789abcdef",
+          "States": [
+            "02"
+          ]
+        }
       ]
     },
     "Version": "1.0.0"

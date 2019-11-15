@@ -1,6 +1,6 @@
 package com.creditid.cid.core
 
-import cats.effect.{ConcurrentEffect, ContextShift, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import com.creditid.cid.client
 import com.creditid.cid.operations._
@@ -14,6 +14,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, GZip, Logger}
+import pureconfig.generic.auto._
 import pureconfig._
 
 sealed abstract class CommandEntry(name: String, description: String)
@@ -28,15 +29,18 @@ object CommandEntry extends Enum[CommandEntry] {
   case object Run extends CommandEntry("start", "start application...") {
     val config: HttpConfig = ConfigSource.default.load[HttpConfig].getOrElse(HttpConfig("0.0.0.0", 8080))
 
-    def stream[F[_] : ConcurrentEffect](scheduler: Scheduler)(implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
-      val ontService = client.ontService
-      val account = ontService.accountOf(client.LABEL, client.PASSWORD)
+    def stream[F[_] : Sync : ConcurrentEffect](scheduler: Scheduler)(implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
+      val service = client.ontService
+      val account = service.accountOf(client.LABEL, client.PASSWORD)
       val ops = new routes.Routers[F](Http4sDsl[F])
 
-      ops.init(ontService, account)
+      for {
+        done <- ops.init(service, account)
+        _ <- if (done) Sync[F].unit else Sync[F].raiseError[Unit](new IllegalStateException("【部署智能合约】或【初始化合约】失败，请稍后重试！"))
+      } yield ()
 
-      val (org, cid, credit, use) = (OrgOps(ontService, account), CidOps(ontService, account), CreditOps(ontService, account), CreditUse(ontService, account))
-      val services = ops.orgOps(org) <+> ops.cigOps(cid) <+> ops.creditOps(credit) <+> ops.creditUse(use)
+      val (org, cid, credit, use) = (OrgOps(service, account), CidOps(service, account), CreditOps(service, account), CreditUse(service, account))
+      val services = ops.orgOps(service, org) <+> ops.cigOps(service, cid) <+> ops.creditOps(service, credit) <+> ops.creditUse(service, use)
       val finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(CORS(GZip(services orNotFound)))
 
       for {
