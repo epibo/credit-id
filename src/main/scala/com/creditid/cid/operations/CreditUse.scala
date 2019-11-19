@@ -9,6 +9,7 @@ import com.creditid.cid.client.{IfSuccess, TxHashHex}
 import com.creditid.cid.web.models.request._
 import com.github.ontio.account.Account
 import com.creditid.cid.web.models.RandomUsage._
+import com.creditid.cid.web.models.随机数
 
 /**
  * @author Wei.Chou
@@ -17,7 +18,7 @@ import com.creditid.cid.web.models.RandomUsage._
 trait CreditUse[F[_]] {
   def get(n: credit_use): F[(IfSuccess, TxHashHex)]
 
-  def get(n: random): F[(IfSuccess, TxHashHex)]
+  def get(n: random): F[随机数]
 }
 
 object CreditUse {
@@ -31,7 +32,7 @@ object CreditUse {
       (success, txHashHex)
     }
 
-    override def get(n: random): F[(IfSuccess, TxHashHex)] = {
+    override def get(n: random): F[随机数] = {
       n.usage match {
         case 请求CreditUse接口 => // 把
           // n.usage.value // 放到`session`

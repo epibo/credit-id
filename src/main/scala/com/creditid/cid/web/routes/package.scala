@@ -5,11 +5,11 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect._
 import cats.implicits._
-import com.creditid.cid.client.HandleNotify.wait4Result
+import com.creditid.cid.client.HandleNotify._
 import com.creditid.cid.client.service.OntService
 import com.creditid.cid.operations._
-import com.creditid.cid.utils.FlagFile.{writeFlag, readerFlag}
-import com.creditid.cid.web.models.ResqCode._
+import com.creditid.cid.utils.FlagFile.{readerFlag, writeFlag}
+import com.creditid.cid.web.models.RespCode._
 import com.creditid.cid.web.models._
 import com.creditid.cid.web.models.request._
 import com.github.ontio.account.Account
@@ -31,13 +31,13 @@ package object routes {
 
       def deploy(n: => AtomicInteger): F[Boolean] = for {
         (success, txHash) <- R.deploy()
-        done <- if (success) wait4Result(service, txHash)(_ => ()) else if (n.decrementAndGet > 0) deploy(n) else Sync[F].pure(false)
+        done <- if (success) wait4Result(service, txHash)(isSuccess) else if (n.decrementAndGet > 0) deploy(n) else Sync[F].pure(false)
         _ <- if (done) writeFlag(contractCodeDeployed, true.toString) else Sync[F].unit
       } yield done
 
       def init(n: => AtomicInteger): F[Boolean] = for {
         (success, txHash) <- R.init()
-        done <- if (success) wait4Result(service, txHash)(_ => ()) else if (n.decrementAndGet > 0) init(n) else Sync[F].pure(false)
+        done <- if (success) wait4Result(service, txHash)(isSuccess) else if (n.decrementAndGet > 0) init(n) else Sync[F].pure(false)
         _ <- if (done) writeFlag(contractInited, true.toString) else Sync[F].unit
       } yield done
 
@@ -78,27 +78,36 @@ package object routes {
             resp <- if (verified) {
               for {
                 (success, txHash) <- R.post(request)
-                // TODO: 这期间还要等待`Notify`回应。
-                bool <- wait4Result(service, txHash)(_ => ())
-                resp <- if (bool) Ok(执行成功.code) else Ok(合约调用失败.code)
+                bool <- if (success) wait4Result(service, txHash)(OrgRegister) else Sync[F].pure(false)
+                resp <- if (bool) Ok(response.org_register(执行成功)) else Ok(response.org_register(合约调用失败))
               } yield resp
-            } else Ok(HMAC验证失败.code)
+            } else Ok(response.org_register(HMAC验证失败))
           } yield resp
 
         case req@POST -> Root / "org_upd_pubkey" =>
           for {
             request <- req.as[org_upd_pubkey]
-            (success, txHash) <- R.post(request)
-
-            resp <- Ok(response.org_upd_pubkey().state)
+            verified <- request.verified
+            resp <- if (verified) {
+              for {
+                (success, txHash) <- R.post(request)
+                bool <- if (success) wait4Result(service, txHash)(OrgUpdPubkey) else Sync[F].pure(false)
+                resp <- if (bool) Ok(response.org_upd_pubkey(执行成功)) else Ok(response.org_upd_pubkey(合约调用失败))
+              } yield resp
+            } else Ok(response.org_upd_pubkey(HMAC验证失败))
           } yield resp
 
         case req@GET -> Root / "org_get_pubkeys" =>
           for {
             request <- req.as[org_get_pubkeys]
-            (success, txHash) <- R.get(request)
-
-            resp <- Ok(txHashHex)
+            verified <- request.verified
+            resp <- if (verified) {
+              for {
+                (success, txHash) <- R.get(request)
+                (bool, pubkeys) <- if (success) wait4Result(service, txHash)(OrgGetPubkeys) else Sync[F].pure((false, Seq.empty[(公钥, CurrentUsed)]))
+                resp <- if (bool) Ok(response.org_get_pubkeys(Right(pubkeys))) else Ok(response.org_get_pubkeys(Left(合约调用失败)))
+              } yield resp
+            } else Ok(response.org_get_pubkeys(Left(HMAC验证失败)))
           } yield resp
       }
     }
@@ -108,17 +117,27 @@ package object routes {
         case req@POST -> Root / "cid_register" =>
           for {
             request <- req.as[cid_register]
-            (success, txHash) <- R.post(request)
-
-            resp <- Ok(txHashHex)
+            verified <- request.verified
+            resp <- if (verified) {
+              for {
+                (success, txHash) <- R.post(request)
+                bool <- if (success) wait4Result(service, txHash)(CidRegister) else Sync[F].pure(false)
+                resp <- if (bool) Ok(response.cid_register(执行成功)) else Ok(response.cid_register(合约调用失败))
+              } yield resp
+            } else Ok(response.cid_register(HMAC验证失败))
           } yield resp
 
         case req@POST -> Root / "cid_record" =>
           for {
             request <- req.as[cid_record]
-            (success, txHash) <- R.post(request)
-
-            resp <- Ok(txHashHex)
+            verified <- request.verified
+            resp <- if (verified) {
+              for {
+                (success, txHash) <- R.post(request)
+                bool <- if (success) wait4Result(service, txHash)(CidRecord) else Sync[F].pure(false)
+                resp <- if (bool) Ok(response.cid_record(执行成功)) else Ok(response.cid_record(合约调用失败))
+              } yield resp
+            } else Ok(response.cid_record(HMAC验证失败))
           } yield resp
       }
     }
@@ -129,17 +148,27 @@ package object routes {
         case req@POST -> Root / "credit_register" =>
           for {
             request <- req.as[credit_register]
-            (success, txHash) <- R.post(request)
-
-            resp <- Ok(txHashHex)
+            verified <- request.verified
+            resp <- if (verified) {
+              for {
+                (success, txHash) <- R.post(request)
+                bool <- if (success) wait4Result(service, txHash)(CreditRegister) else Sync[F].pure(false)
+                resp <- if (bool) Ok(response.credit_register(执行成功)) else Ok(response.credit_register(合约调用失败))
+              } yield resp
+            } else Ok(response.credit_register(HMAC验证失败))
           } yield resp
 
         case req@POST -> Root / "credit_destroy" =>
           for {
             request <- req.as[credit_destroy]
-            (success, txHash) <- R.post(request)
-
-            resp <- Ok(txHashHex)
+            verified <- request.verified
+            resp <- if (verified) {
+              for {
+                (success, txHash) <- R.post(request)
+                bool <- if (success) wait4Result(service, txHash)(CreditDestroy) else Sync[F].pure(false)
+                resp <- if (bool) Ok(response.credit_destroy(执行成功)) else Ok(response.credit_destroy(合约调用失败))
+              } yield resp
+            } else Ok(response.credit_destroy(HMAC验证失败))
           } yield resp
       }
     }
@@ -149,10 +178,15 @@ package object routes {
         case req@GET -> Root / "credit_use" =>
           for {
             request <- req.as[credit_use]
-            (success, txHash) <- R.get(request)
-
-            resp <- Ok(txHashHex)
-          } yield resp //resp
+            verified <- request.verified
+            resp <- if (verified) {
+              for {
+                (success, txHash) <- R.get(request)
+                (bool, credit) <- if (success) wait4Result(service, txHash)(CreditUse) else Sync[F].pure((false, ""))
+                resp <- if (bool) Ok(response.credit_use(Right(credit))) else Ok(response.credit_use(Left(合约调用失败)))
+              } yield resp
+            } else Ok(response.credit_use(Left(HMAC验证失败)))
+          } yield resp
 
         case req@GET -> Root / "random" =>
           for {

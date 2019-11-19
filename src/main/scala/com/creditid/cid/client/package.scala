@@ -1,5 +1,7 @@
 package com.creditid.cid
 
+import java.util
+
 import cats.effect._
 import com.alibaba.fastjson.JSON
 import com.creditid.cid.client.service.OntService
@@ -12,7 +14,7 @@ import com.github.ontio.smartcontract.neovm.abi.AbiInfo
 package object client {
   type IfSuccess = Boolean
   type TxHashHex = String
-  type Notify = String
+  type Notify = util.List[AnyRef]
 
   val TEST_MODE = true
 

@@ -10,22 +10,32 @@ import com.github.ontio.network.connect.IConnector
 import com.github.ontio.sdk.exception.SDKException
 
 import scala.concurrent.duration.DurationInt
+import com.creditid.cid.web.models._
 
 /**
  * @author Wei.Chou
  * @version 1.0, 17/10/2019
  */
 object HandleNotify {
-
-  def wait4Result[F[_] : Sync : Timer](service: OntService[F], txHash: TxHashHex)(f: Either[Exception, Option[Notify]] => Unit): F[IfSuccess] = {
-    def isSuccess(either: Either[Exception, Option[Notify]]): IfSuccess = either.getOrElse(None).isDefined
-
+  /** 看到一段关于`alibaba.fastjson`的说明：
+   * {
+   * 3、有关类库的一些说明：
+   * SerializeWriter：相当于StringBuffer
+   * JSONArray：相当于List<Object>
+   * JSONObject：相当于Map<String, Object>
+   * *
+   * JSON反序列化没有真正数组，本质类型都是List<Object>。
+   * }
+   * 说明`Notify`是对象类型而不是字符串。
+   * `Notify`是从`com.github.ontio.network.rest.Result`中的`Object Result`字段中取出来的，而
+   * `Result`字段已在下面的代码中被明确的当做了`Map`，所以……有上面的结论。
+   */
+  def wait4Result[F[_] : Sync : Timer, A](service: OntService[F], txHash: TxHashHex)(f: Either[Exception, Option[Notify]] => A): F[A] = {
     service.connectorUse { connector =>
       for {
         either <- wait4Result(connector, txHash, new AtomicInteger(20))
-        _ = f(either)
-        success = isSuccess(either)
-      } yield success
+        a = f(either)
+      } yield a
     }
   }
 
@@ -58,6 +68,8 @@ object HandleNotify {
     } yield result
   }
 
+  def isSuccess(either: Either[Exception, Option[Notify]]): IfSuccess = either.getOrElse(None).isDefined
+
   // 合约中调用：
   // Notify(['FunctionName', cid, True/False])
 
@@ -84,44 +96,40 @@ object HandleNotify {
   }*/
 
   // Notify(['Init', True])
-  def Init(): Unit = {
+  def Init(): Unit = ???
 
-  }
+  // TODO: 还要根据 cid、org_id 判断请求的对应关系。
+  def OrgRegister(either: Either[Exception, Option[Notify]]) = isSuccess(either)
 
-  def OrgRegister(): Unit = {
-
-  }
-
-  def OrgUpdPubkey(): Unit = {
-
-  }
+  def OrgUpdPubkey(either: Either[Exception, Option[Notify]]) = isSuccess(either)
 
   // Notify(['OrgGetPubkeys', org_id, True, list])
   // list.elem: (pubkey, True/False)
-  def OrgGetPubkeys(): Unit = {
+  def OrgGetPubkeys(either: Either[Exception, Option[Notify]]): (IfSuccess, 公钥组) = {
+    val or = either.getOrElse(None)
+    if (or.isDefined) {
+      val arr: util.List[AnyRef] = or.get
+      arr
+      .
+    } else if (either.isLeft) {
 
+    } else {
+
+    }
   }
 
-  def CidRegister(): Unit = {
+  def CidRegister(either: Either[Exception, Option[Notify]]) = isSuccess(either)
 
-  }
+  def CidRecord(either: Either[Exception, Option[Notify]]) = isSuccess(either)
 
-  def CidRecord(): Unit = {
+  def CreditRegister(either: Either[Exception, Option[Notify]]) = isSuccess(either)
 
-  }
-
-  def CreditRegister(): Unit = {
-
-  }
-
-  def CreditDestroy(): Unit = {
-
-  }
+  def CreditDestroy(either: Either[Exception, Option[Notify]]) = isSuccess(either)
 
   // TODO: 这个 Notify 有数据。这个接口在链上仅取出数据，然后在服务端处理真正要返回的数据。
   // Notify(['CreditUse', cid, True, map[org_id]])
   // map[org_id]: CreditRegister 的`data`。
-  def CreditUse(): Unit = {
+  def CreditUse(either: Either[Exception, Option[Notify]]): (IfSuccess, 凭据) = {
 
   }
 }

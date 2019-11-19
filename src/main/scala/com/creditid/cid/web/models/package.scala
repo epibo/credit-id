@@ -19,18 +19,18 @@ package object models {
   type 个人信息 = JOBJ
   type 记录 = JOBJ
   type 公钥 = HEX
-  type 公钥组 = Seq[公钥]
+  type CurrentUsed = Boolean
+  type 公钥组 = Seq[(公钥, CurrentUsed)]
   type 凭据 = JOBJ
   type HMAC = HEX
+  type 随机数 = BigInt
   type 凭据状态 = CreditState
-  type 返回状态 = ResqCode
+  type 返回状态 = RespCode
   type 随机数用途 = RandomUsage
-  type 凭据JOBJ = (凭据, 凭据状态)
 
   sealed abstract class CreditState(val name: String) extends EnumEntry
 
   object CreditState extends Enum[CreditState] with CirceEnum[CreditState] {
-
     override val values = findValues
 
     case object 有效 extends CreditState("valid")
@@ -41,19 +41,16 @@ package object models {
 
   }
 
-  sealed abstract class ResqCode(val value: Int, val name: String)
-    extends IntEnumEntry {
-    def code: Int = value
-  }
+  sealed abstract class RespCode(val value: Int, val msg: String) extends IntEnumEntry
 
-  object ResqCode extends IntEnum[ResqCode] with IntCirceEnum[ResqCode] {
+  object RespCode extends IntEnum[RespCode] with IntCirceEnum[RespCode] {
     override val values = findValues
 
-    case object 执行成功 extends ResqCode(0x1, "执行成功")
+    case object 执行成功 extends RespCode(0x1, "执行成功")
 
-    case object HMAC验证失败 extends ResqCode(0x2, "HMAC验证失败")
+    case object HMAC验证失败 extends RespCode(0x2, "HMAC验证失败")
 
-    case object 合约调用失败 extends ResqCode(0x3, "合约调用失败")
+    case object 合约调用失败 extends RespCode(0x3, "合约调用失败")
 
   }
 
@@ -89,7 +86,7 @@ package object models {
 
     @throws[Exception]
     private def verified(req: request.Req): Boolean = req match {
-      case request.org_register(org_id, pubkeys, hmac) => verifyHmac(hmac, org_id, pubkeys.reduce((a, b) => a + b))
+      case request.org_register(org_id, pubkeys, hmac) => verifyHmac(hmac, org_id, pubkeys.reduce { case ((a, _), (b, _)) => a + b })
       case request.org_upd_pubkey(org_id, pkey, hmac) => verifyHmac(hmac, org_id, pkey)
       case request.cid_register(cid, data, hmac) => verifyHmac(hmac, cid, data)
       case request.cid_record(cid, data, hmac) => verifyHmac(hmac, cid, data)
@@ -148,32 +145,34 @@ package object models {
 
   object response {
 
-    @JsonCodec
-    final case class org_register(state: 返回状态)
+    sealed trait Resp
 
     @JsonCodec
-    final case class org_upd_pubkey(state: 返回状态)
-
-    //@JsonCodec
-    final case class org_get_pubkeys(either: Either[ResqCode.HMAC验证失败.type, 公钥组])
+    final case class org_register(state: 返回状态) extends Resp
 
     @JsonCodec
-    final case class cid_register(state: 返回状态)
+    final case class org_upd_pubkey(state: 返回状态) extends Resp
 
     @JsonCodec
-    final case class cid_record(state: 返回状态)
+    final case class org_get_pubkeys(either: Either[RespCode, 公钥组]) extends Resp
 
     @JsonCodec
-    final case class credit_register(state: 返回状态)
+    final case class cid_register(state: 返回状态) extends Resp
 
     @JsonCodec
-    final case class credit_destroy(state: 返回状态)
-
-    // @JsonCodec
-    final case class credit_use(either: Either[ResqCode.HMAC验证失败.type, 凭据JOBJ])
+    final case class cid_record(state: 返回状态) extends Resp
 
     @JsonCodec
-    final case class random(random: BigInt)
+    final case class credit_register(state: 返回状态) extends Resp
+
+    @JsonCodec
+    final case class credit_destroy(state: 返回状态) extends Resp
+
+    @JsonCodec
+    final case class credit_use(either: Either[RespCode, 凭据]) extends Resp
+
+    @JsonCodec
+    final case class random(random: 随机数) extends Resp
 
   }
 
