@@ -6,11 +6,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import cats.effect.{Sync, Timer}
 import cats.implicits._
 import com.creditid.cid.client.service.OntService
+import com.creditid.cid.web.models._
 import com.github.ontio.network.connect.IConnector
 import com.github.ontio.sdk.exception.SDKException
 
 import scala.concurrent.duration.DurationInt
-import com.creditid.cid.web.models._
+import scala.util.Try
 
 /**
  * @author Wei.Chou
@@ -39,23 +40,22 @@ object HandleNotify {
     }
   }
 
-  @throws[Exception]
   private def wait4Result[F[_] : Sync : Timer](connector: IConnector, txHash: TxHashHex, n: AtomicInteger): F[Either[Exception, Option[Notify]]] = {
-    // 以下代码重构自`ConnectMgr.waitResult(txHash)`
+    // 以下代码重构自`com.github.ontio.sdk.manager.ConnectMgr.waitResult(txHash)`
     def connOps(): Either[Exception, Option[Notify]] = {
-      try {
+      Try {
         val event = connector.getSmartCodeEvent(txHash)
-        val notify = if (event == null || !event.isInstanceOf[util.Map[_, _]]) {
-          val txState = connector.getMemPoolTxState(txHash) // TODO: 这一句没有看到在哪里用
-          None
-        } else Option(event.asInstanceOf[util.Map[_, _]].get("Notify").asInstanceOf[Notify])
+        val notify =
+          if (event == null || !event.isInstanceOf[util.Map[_, _]]) {
+            val txState = connector.getMemPoolTxState(txHash) // TODO: 这一句没有看到在哪里用
+            None
+          } else Option(event.asInstanceOf[util.Map[_, _]].get("Notify").asInstanceOf[Notify])
         Right[Exception, Option[Notify]](notify)
-      } catch {
-        case e: Exception =>
-          if (Seq("UNKNOWN TRANSACTION", "getmempooltxstate").forall(e.getMessage.contains(_))) {
-            Left[Exception, Option[Notify]](new SDKException(e.getMessage))
-          } else Right[Exception, Option[Notify]](None)
-      }
+      } fold(e => {
+        if (Seq("UNKNOWN TRANSACTION", "getmempooltxstate").forall(e.getMessage.contains(_))) {
+          Left[Exception, Option[Notify]](new SDKException(e.getMessage))
+        } else Right[Exception, Option[Notify]](None)
+      }, v => v)
     }
 
     for {
@@ -72,8 +72,6 @@ object HandleNotify {
 
   // 合约中调用：
   // Notify(['FunctionName', cid, True/False])
-
-  // TODO: 参见`ontSdk.getConnect.waitResult(txHash)`以取得通知。
 
   /*{
     "Action": "getsmartcodeeventbyhash",
@@ -98,38 +96,41 @@ object HandleNotify {
   // Notify(['Init', True])
   def Init(): Unit = ???
 
-  // TODO: 还要根据 cid、org_id 判断请求的对应关系。
-  def OrgRegister(either: Either[Exception, Option[Notify]]) = isSuccess(either)
+  // 还要根据`cid`, `org_id`判断请求的对应关系。不需要，`hash`已经标识了唯一性。
+  def OrgRegister(either: Either[Exception, Option[Notify]]): IfSuccess = isSuccess(either)
 
-  def OrgUpdPubkey(either: Either[Exception, Option[Notify]]) = isSuccess(either)
+  def OrgUpdPubkey(either: Either[Exception, Option[Notify]]): IfSuccess = isSuccess(either)
 
   // Notify(['OrgGetPubkeys', org_id, True, list])
   // list.elem: (pubkey, True/False)
   def OrgGetPubkeys(either: Either[Exception, Option[Notify]]): (IfSuccess, 公钥组) = {
     val or = either.getOrElse(None)
+    println(or)
     if (or.isDefined) {
       val arr: util.List[AnyRef] = or.get
-      arr
-      .
+
     } else if (either.isLeft) {
 
     } else {
 
     }
+    // TODO: 还不知道是什么结构，需要先输出来看看。
+    ???
   }
 
-  def CidRegister(either: Either[Exception, Option[Notify]]) = isSuccess(either)
+  def CidRegister(either: Either[Exception, Option[Notify]]): IfSuccess = isSuccess(either)
 
-  def CidRecord(either: Either[Exception, Option[Notify]]) = isSuccess(either)
+  def CidRecord(either: Either[Exception, Option[Notify]]): IfSuccess = isSuccess(either)
 
-  def CreditRegister(either: Either[Exception, Option[Notify]]) = isSuccess(either)
+  def CreditRegister(either: Either[Exception, Option[Notify]]): IfSuccess = isSuccess(either)
 
-  def CreditDestroy(either: Either[Exception, Option[Notify]]) = isSuccess(either)
+  def CreditDestroy(either: Either[Exception, Option[Notify]]): IfSuccess = isSuccess(either)
 
   // TODO: 这个 Notify 有数据。这个接口在链上仅取出数据，然后在服务端处理真正要返回的数据。
   // Notify(['CreditUse', cid, True, map[org_id]])
   // map[org_id]: CreditRegister 的`data`。
   def CreditUse(either: Either[Exception, Option[Notify]]): (IfSuccess, 凭据) = {
 
+    ???
   }
 }

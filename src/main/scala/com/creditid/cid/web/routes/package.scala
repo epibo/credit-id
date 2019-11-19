@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect._
 import cats.implicits._
-import com.creditid.cid.client.HandleNotify._
+import com.creditid.cid.client.HandleNotify.{CreditUse => CidUse, _}
 import com.creditid.cid.client.service.OntService
 import com.creditid.cid.operations._
 import com.creditid.cid.utils.FlagFile.{readerFlag, writeFlag}
@@ -105,9 +105,9 @@ package object routes {
               for {
                 (success, txHash) <- R.get(request)
                 (bool, pubkeys) <- if (success) wait4Result(service, txHash)(OrgGetPubkeys) else Sync[F].pure((false, Seq.empty[(公钥, CurrentUsed)]))
-                resp <- if (bool) Ok(response.org_get_pubkeys(Right(pubkeys))) else Ok(response.org_get_pubkeys(Left(合约调用失败)))
+                resp <- if (bool) Ok(/*response.org_get_pubkeys(Right(*/ pubkeys /*))*/) else Ok(合约调用失败.value)
               } yield resp
-            } else Ok(response.org_get_pubkeys(Left(HMAC验证失败)))
+            } else Ok(HMAC验证失败.value)
           } yield resp
       }
     }
@@ -182,10 +182,10 @@ package object routes {
             resp <- if (verified) {
               for {
                 (success, txHash) <- R.get(request)
-                (bool, credit) <- if (success) wait4Result(service, txHash)(CreditUse) else Sync[F].pure((false, ""))
-                resp <- if (bool) Ok(response.credit_use(Right(credit))) else Ok(response.credit_use(Left(合约调用失败)))
+                (bool, credit) <- if (success) wait4Result(service, txHash)(CidUse) else Sync[F].pure((false, ""))
+                resp <- if (bool) Ok(/*response.credit_use(Right(*/ credit /*))*/) else Ok(合约调用失败.value)
               } yield resp
-            } else Ok(response.credit_use(Left(HMAC验证失败)))
+            } else Ok(HMAC验证失败.value)
           } yield resp
 
         case req@GET -> Root / "random" =>

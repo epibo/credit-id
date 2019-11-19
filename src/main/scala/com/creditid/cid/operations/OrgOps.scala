@@ -22,7 +22,7 @@ object OrgOps {
     override def post(n: org_register): F[(IfSuccess, TxHashHex)] = for {
       account <- accountF
       address = client.contractAddress
-      request = OrgRegister(n.org_id, n.pubkeys.toList)
+      request = OrgRegister(n.org_id, n.pubkeys.map(_._1).toList)
       (success, txHashHex) <- service.invokeContract(address, account, request)
     } yield {
       (success, txHashHex)

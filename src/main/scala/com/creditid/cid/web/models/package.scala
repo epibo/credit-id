@@ -2,6 +2,7 @@ package com.creditid.cid.web
 
 import cats.effect.Sync
 import cats.implicits._
+import com.creditid.cid.web.models.request.org_get_pubkeys
 import com.github.ontio.crypto.Base58
 import enumeratum._
 import enumeratum.values._
@@ -84,9 +85,8 @@ package object models {
       bool <- Sync[F].delay(verified(req)).handleErrorWith(_ => Sync[F].pure(false))
     } yield bool
 
-    @throws[Exception]
-    private def verified(req: request.Req): Boolean = req match {
-      case request.org_register(org_id, pubkeys, hmac) => verifyHmac(hmac, org_id, pubkeys.reduce { case ((a, _), (b, _)) => a + b })
+    private def verified(req: request.Req): Boolean = (req: @unchecked) match {
+      case request.org_register(org_id, pubkeys, hmac) => verifyHmac(hmac, org_id, pubkeys.reduce { (a, b) => (a._1 + b._1, false) }._1)
       case request.org_upd_pubkey(org_id, pkey, hmac) => verifyHmac(hmac, org_id, pkey)
       case request.cid_register(cid, data, hmac) => verifyHmac(hmac, cid, data)
       case request.cid_record(cid, data, hmac) => verifyHmac(hmac, cid, data)
@@ -95,7 +95,6 @@ package object models {
       case request.credit_use(cid, org_id, random, hmac) => verifyHmac(hmac, cid, org_id, random)
     }
 
-    @throws[Exception]
     private def verifyHmac(hmac: String, data: String*): Boolean = {
       // TODO: 共享的`key`从配置文件中读取，启动命令参数。
       hmac.decodeHex sameElements HmacUtils.hmacSha256(??? /*key*/ , data.reduce((a, b) => a + b))
@@ -153,7 +152,7 @@ package object models {
     @JsonCodec
     final case class org_upd_pubkey(state: 返回状态) extends Resp
 
-    @JsonCodec
+    //@JsonCodec
     final case class org_get_pubkeys(either: Either[RespCode, 公钥组]) extends Resp
 
     @JsonCodec
@@ -168,7 +167,7 @@ package object models {
     @JsonCodec
     final case class credit_destroy(state: 返回状态) extends Resp
 
-    @JsonCodec
+    //@JsonCodec
     final case class credit_use(either: Either[RespCode, 凭据]) extends Resp
 
     @JsonCodec
