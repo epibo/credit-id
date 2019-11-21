@@ -11,6 +11,8 @@ import com.github.ontio.core.payload.DeployCode
 import com.github.ontio.core.transaction.Transaction
 import com.github.ontio.network.connect.IConnector
 import com.github.ontio.smartcontract.{NeoVm, Vm}
+import com.creditid.cid.web.models.随机数
+import scala.util.Random
 
 trait OntService[F[_]] {
   def accountOf(label: String, password: String): F[Account]
@@ -43,11 +45,15 @@ trait OntService[F[_]] {
   def deploy(tx: DeployCode): F[(IfSuccess, TxHashHex)]
 
   def connectorUse[A](f: IConnector => F[A]): F[A]
+
+  def nextRand:F[随机数]
 }
 
 object OntService {
   def apply[F[_] : Sync](host: String): OntService[F] = new OntService[F] {
     private val ontHost = Ont.apply[F](host)
+
+    override def nextRand:F[随机数] = Sync[F].delay(BigInt(Random.nextLong()))
 
     override def accountOf(label: String, password: String): F[Account] = {
       ontHost.walletMgr.use { walletMgr =>

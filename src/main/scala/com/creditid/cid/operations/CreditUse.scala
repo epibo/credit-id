@@ -10,6 +10,7 @@ import com.creditid.cid.web.models.request._
 import com.github.ontio.account.Account
 import com.creditid.cid.web.models.RandomUsage._
 import com.creditid.cid.web.models.随机数
+import scala.util.Random
 
 /**
  * @author Wei.Chou
@@ -22,6 +23,7 @@ trait CreditUse[F[_]] {
 }
 
 object CreditUse {
+
   def apply[F[_] : Sync](service: OntService[F], accountF: F[Account]): CreditUse[F] = new CreditUse[F] {
     override def get(n: credit_use): F[(IfSuccess, TxHashHex)] = for {
       account <- accountF
@@ -34,11 +36,10 @@ object CreditUse {
 
     override def get(n: random): F[随机数] = {
       n.usage match {
-        case 请求CreditUse接口 => // 把
-          // n.usage.value // 放到`session`
-
-          ??? // TODO:
+        case 请求CreditUse接口 => service.nextRand
+        } 
+        
       }
-    }
+    
   }
 }

@@ -2,6 +2,8 @@
 .idea
 .metals
 .vscode
+.ionide
+null
 project/.bloop
 project/project
 project/target

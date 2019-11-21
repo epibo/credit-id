@@ -1,5 +1,6 @@
 package com.creditid.cid.web
 
+import cats.data.State
 import cats.effect.Sync
 import cats.implicits._
 import com.creditid.cid.web.models.request.org_get_pubkeys
@@ -28,7 +29,8 @@ package object models {
   type 凭据状态 = CreditState
   type 返回状态 = RespCode
   type 随机数用途 = RandomUsage
-
+  
+  
   sealed abstract class CreditState(val name: String) extends EnumEntry
 
   object CreditState extends Enum[CreditState] with CirceEnum[CreditState] {
