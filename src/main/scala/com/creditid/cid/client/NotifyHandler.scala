@@ -17,7 +17,7 @@ import scala.util.Try
  * @author Wei.Chou
  * @version 1.0, 17/10/2019
  */
-object HandleNotify {
+object NotifyHandler {
   /** 看到一段关于`alibaba.fastjson`的说明：
    * {
    * 3、有关类库的一些说明：

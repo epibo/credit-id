@@ -1,5 +1,7 @@
 package com.creditid.cid.client
 
+import java.util
+
 import cats.effect._
 import cats.implicits._
 import com.creditid.cid.client
@@ -8,6 +10,8 @@ import com.github.ontio.account.Account
 import com.github.ontio.smartcontract.NeoVm
 import com.github.ontio.smartcontract.neovm.abi.Parameter.Type
 import com.github.ontio.smartcontract.neovm.abi.{AbiFunction, Parameter}
+
+import scala.collection.JavaConverters.{asJavaCollectionConverter, seqAsJavaListConverter}
 
 /**
  * @author Wei.Chou
@@ -54,8 +58,14 @@ object ContractInvoke {
     extends AbiFuncBuilding {
     override def parameters: List[Parameter] = List(
       new Parameter("org_id", Type.String, org_id),
-      new Parameter("pubkeys", Type.Array, pubkeys.toArray)
+      new Parameter("pubkeys", Type.Array, toJavaList(pubkeys))
     )
+
+    def toJavaList(l: List[String]): util.List[String] = {
+      val dst = new util.ArrayList[String]
+      for (i <- l) dst.add(i)
+      dst
+    }
   }
 
   //{"name":"OrgUpdPubkey","parameters":[{"name":"org_id","type":""},{"name":"pubkey","type":""}]},

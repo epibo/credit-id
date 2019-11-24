@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect._
 import cats.implicits._
-import com.creditid.cid.client.HandleNotify.{CreditUse => CidUse, _}
+import com.creditid.cid.client.NotifyHandler.{CreditUse => CidUse, _}
 import com.creditid.cid.client.service.OntService
 import com.creditid.cid.operations._
 import com.creditid.cid.utils.FlagFile.{readerFlag, writeFlag}
