@@ -75,6 +75,4 @@ private[client] final class Ont[F[_] : Sync](host: String) {
   }
 
   def accountsFrom(walletMgr: WalletMgr): Seq[WalletAccount] = walletMgr.getWallet.getAccounts.toSeq
-
-  
 }
