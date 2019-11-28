@@ -46,14 +46,14 @@ trait OntService[F[_]] {
 
   def connectorUse[A](f: IConnector => F[A]): F[A]
 
-  def nextRand:F[随机数]
+  def nextRand: F[随机数]
 }
 
 object OntService {
   def apply[F[_] : Sync](host: String): OntService[F] = new OntService[F] {
     private val ontHost = Ont.apply[F](host)
 
-    override def nextRand:F[随机数] = Sync[F].delay(BigInt(Random.nextLong()))
+    override def nextRand: F[随机数] = Sync[F].delay(BigInt(Random.nextLong()))
 
     override def accountOf(label: String, password: String): F[Account] = {
       ontHost.walletMgr.use { walletMgr =>
@@ -104,6 +104,10 @@ object OntService {
         opt = txHashE.toOption
         bool = opt.isDefined
         txHash = opt.orNull
+        _ = txHashE.handleError { e =>
+          e.printStackTrace() // 输出异常，以便 debug.
+          txHash
+        }
       } yield {
         (bool, txHash)
       }
@@ -113,7 +117,10 @@ object OntService {
       val txHex = Helper.toHexString(tx.toArray)
       for {
         bool <- ontHost.connection.use { case (conn, _) =>
-          Sync[F].delay(conn.sendRawTransaction(txHex)).handleErrorWith(_ => Sync[F].pure(false))
+          Sync[F].delay(conn.sendRawTransaction(txHex)).handleErrorWith { e =>
+            e.printStackTrace() // 输出异常，以便 debug.
+            Sync[F].pure(false)
+          }
         }
         txHash = tx.hash.toHexString
       } yield {
