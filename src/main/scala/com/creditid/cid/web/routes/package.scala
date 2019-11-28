@@ -13,15 +13,21 @@ import com.creditid.cid.web.models.RespCode._
 import com.creditid.cid.web.models._
 import com.creditid.cid.web.models.request._
 import com.github.ontio.account.Account
+
 import org.http4s._
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.Http4sDsl
 
+import tsec.authentication._
+import tsec.mac.jca.{HMACSHA256, MacSigningKey}
+import tsec.jwt.algorithms.JWA._
+import scala.concurrent.duration._
+import io.circe._
+import io.circe.generic.semiauto._
+
 package object routes {
 
   final class Routers[F[_] : Sync : Concurrent : Timer](dsl: Http4sDsl[F]) {
-
-    import dsl._
 
     def init(service: OntService[F], accountF: F[Account]): F[Boolean] = {
       val R: ContractOps[F] = ContractOps(service, accountF)
@@ -68,7 +74,7 @@ package object routes {
         done = deployed && inited
       } yield done
     }
-
+    import dsl._
     def orgOps(service: OntService[F], R: OrgOps[F]): HttpRoutes[F] = {
       HttpRoutes.of[F] {
         case req@POST -> Root / "org_register" =>
@@ -196,6 +202,49 @@ package object routes {
           } yield resp
       }
     }
+
+
+    implicit val encoder: ObjectEncoder[credit_use]  = deriveEncoder[credit_use]
+
+    private val signingKey: MacSigningKey[HMACSHA256] = HMACSHA256.generateKey[cats.Id]
+
+    private val jwtStatelessAuth = JWTAuthenticator.pstateless.inBearerToken[F, credit_use, HMACSHA256](
+        expiryDuration = 10.minutes, //Absolute expiration time
+        maxIdle        = None,
+        signingKey     = signingKey
+      )
+
+    private val Auth = SecuredRequestHandler(jwtStatelessAuth)
+
+    def creditUseAuth(service: OntService[F], R: CreditUse[F]): HttpRoutes[F] = Auth.liftService{
+      TSecAuthService {
+        case request@GET -> Root / "random" asAuthed credit_use =>
+          val r: SecuredRequest[F, credit_use, AugmentedJWT[HMACSHA256, credit_use]] = request
+          Ok(r.identity)
+      }
+    }
+//      HttpRoutes.of[F] {
+////        case req@POST -> Root / "credit_use" =>
+////          for {
+////            request <- req.as[credit_use]
+////            verified <- request.verified
+////            resp <- if (verified) {
+////              for {
+////                (success, txHash) <- R.get(request)
+////                (bool, credit) <- if (success) wait4Result(service, txHash)(CidUse) else Sync[F].pure((false, ""))
+////                resp <- if (bool) Ok(/*response.credit_use(Right(*/ credit /*))*/) else Ok(合约调用失败.value)
+////              } yield resp
+////            } else Ok(HMAC验证失败.value)
+////          } yield resp
+//
+//        case req@GET -> Root / "random" =>
+//          for {
+//            request <- req.as[random]
+//            random <- R.get(request)
+//            resp <- Ok(random)
+//          } yield resp
+//      }
+//    }
   }
 
 }

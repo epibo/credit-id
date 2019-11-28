@@ -1,9 +1,8 @@
 package com.creditid.cid.web
 
-import cats.data.State
+
 import cats.effect.Sync
 import cats.implicits._
-import com.creditid.cid.web.models.request.org_get_pubkeys
 import com.github.ontio.crypto.Base58
 import enumeratum._
 import enumeratum.values._

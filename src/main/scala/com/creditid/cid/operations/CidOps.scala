@@ -14,6 +14,7 @@ import com.github.ontio.account.Account
  * @version 1.0, 11/11/2019
  */
 trait CidOps[F[_]] {
+
   def post(n: cid_register): F[(IfSuccess, TxHashHex)]
 
   def post(n: cid_record): F[(IfSuccess, TxHashHex)]
@@ -21,20 +22,17 @@ trait CidOps[F[_]] {
 
 object CidOps {
   def apply[F[_] : Sync](service: OntService[F], accountF: F[Account]): CidOps[F] = new CidOps[F] {
+
     override def post(n: cid_register): F[(IfSuccess, TxHashHex)] = for {
       account <- accountF
-      address = client.contractAddress
-      request = CidRegister(n.cid, n.data)
-      (success, txHashHex) <- service.invokeContract(address, account, request)
+      (success, txHashHex) <- service.invokeContract(client.contractAddress, account, CidRegister(n.cid, n.data))
     } yield {
       (success, txHashHex)
     }
 
     override def post(n: cid_record): F[(IfSuccess, TxHashHex)] = for {
       account <- accountF
-      address = client.contractAddress
-      request = CidRecord(n.cid, n.data)
-      (success, txHashHex) <- service.invokeContract(address, account, request)
+      (success, txHashHex) <- service.invokeContract(client.contractAddress, account, CidRecord(n.cid, n.data))
     } yield {
       (success, txHashHex)
     }

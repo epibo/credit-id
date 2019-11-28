@@ -8,7 +8,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.10")
 
 //micro-site/documents
 addSbtPlugin("com.47deg" % "sbt-microsites" % "0.9.4")
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.5")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.0.2")
 
 //Docker related
 addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.5.0")

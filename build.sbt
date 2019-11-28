@@ -5,13 +5,16 @@ version := version4DocConsistency
 scalaVersion := "2.12.10"
 parallelExecution in Test := false
 
-addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3")
-addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.0")
-addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full)
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0")
+addCompilerPlugin(
+  "org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full
+)
 
 scalacOptions ++= Seq(
   "-deprecation",
-  "-encoding", "UTF-8",
+  "-encoding",
+  "UTF-8",
   "-language:higherKinds",
   "-language:postfixOps",
   "-feature",
@@ -20,28 +23,42 @@ scalacOptions ++= Seq(
   "-Yrangepos"
 )
 
-
 libraryDependencies ++= typelevel ++ auxiliary ++ ontSdk
 
-lazy val typelevel = cats ++ shapeless ++ monix ++ http4s ++ fetch ++ circe
+lazy val typelevel = cats ++ shapeless ++ monix ++ http4s ++ circe ++ tsec
 
 lazy val auxiliary = logs ++ enums ++ args ++ validation ++ config
 
 lazy val http4s = {
   val http4sVersion = "0.20.11"
   Seq(
-    "org.http4s"      %% "http4s-prometheus-metrics" % http4sVersion,
-    "org.http4s"      %% "http4s-dropwizard-metrics" % http4sVersion,
-    "org.http4s"      %% "http4s-blaze-server" % http4sVersion,
-    "org.http4s"      %% "http4s-blaze-client" % http4sVersion,
-    "org.http4s"      %% "http4s-circe"        % http4sVersion,
-    "org.http4s"      %% "http4s-dsl"          % http4sVersion,
-    "org.http4s"      %% "http4s-testing"            % http4sVersion % Test,
+    "org.http4s" %% "http4s-prometheus-metrics" % http4sVersion,
+    "org.http4s" %% "http4s-dropwizard-metrics" % http4sVersion,
+    "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+    "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+    "org.http4s" %% "http4s-circe" % http4sVersion,
+    "org.http4s" %% "http4s-dsl" % http4sVersion,
+    "org.http4s" %% "http4s-testing" % http4sVersion % Test
   )
 }
 
-lazy val fetch = {
-  Seq("com.47deg" %% "fetch" % "1.2.0")
+lazy val tsec = {
+  val tsecV = "0.1.0"
+  Seq(
+    "io.github.jmcardon" %% "tsec-common" % tsecV,
+    "io.github.jmcardon" %% "tsec-password" % tsecV,
+    "io.github.jmcardon" %% "tsec-cipher-jca" % tsecV,
+    "io.github.jmcardon" %% "tsec-cipher-bouncy" % tsecV,
+    "io.github.jmcardon" %% "tsec-mac" % tsecV,
+    "io.github.jmcardon" %% "tsec-signatures" % tsecV,
+    "io.github.jmcardon" %% "tsec-hash-jca" % tsecV,
+    "io.github.jmcardon" %% "tsec-hash-bouncy" % tsecV,
+   // "io.github.jmcardon" %% "tsec-libsodium" % tsecV,
+    "io.github.jmcardon" %% "tsec-jwt-mac" % tsecV,
+    "io.github.jmcardon" %% "tsec-jwt-sig" % tsecV,
+    "io.github.jmcardon" %% "tsec-http4s" % tsecV
+  )
+
 }
 lazy val cats = {
   Seq(
@@ -51,8 +68,6 @@ lazy val cats = {
     "org.typelevel" %% "cats-free"
   ).map(_ % "2.0.0")
 }
-
-
 
 lazy val shapeless = {
   Seq(
@@ -70,10 +85,9 @@ lazy val validation = {
     "org.scalacheck" %% "scalacheck" % "1.14.0",
     "org.specs2" %% "specs2-core" % "4.6.0",
     "org.scalatest" %% "scalatest" % "3.0.8",
-    "org.scalamock" %% "scalamock" % "4.4.0",
+    "org.scalamock" %% "scalamock" % "4.4.0"
   ).map(_ % Test)
 }
-
 
 lazy val logs = {
   Seq(
@@ -102,17 +116,17 @@ lazy val config = {
   Seq("com.github.pureconfig" %% "pureconfig" % "0.12.1")
 }
 
-
 lazy val circe = {
   val circeVersion = "0.12.1"
   Seq(
     "io.circe" %% "circe-core",
     "io.circe" %% "circe-generic",
-    "io.circe" %% "circe-parser",
+    "io.circe" %% "circe-parser"
   ).map(_ % circeVersion)
 }
 
-lazy val docs = project.in(file("cid-docs")) // important: it must not be docs/
+lazy val docs = project
+  .in(file("cid-docs")) // important: it must not be docs/
   .settings(
     mdocVariables := Map(
       "VERSION" -> version4DocConsistency, // version.value, // 注意这个 version 是 docs project 的 version.
