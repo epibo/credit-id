@@ -40,7 +40,8 @@ object CommandEntry extends Enum[CommandEntry] {
       } yield ()
 
       val (org, cid, credit, use) = (OrgOps(service, account), CidOps(service, account), CreditOps(service, account), CreditUse(service, account))
-      val services = ops.orgOps(service, org) <+> ops.cigOps(service, cid) <+> ops.creditOps(service, credit) <+> ops.creditUse(service, use)
+      val services = ops.orgOps(service, org) <+> ops.cigOps(service, cid) <+> ops.creditOps(service, credit) <+>
+        ops.creditUse(service, use) <+> ops.creditUseAuth(service, use)
       val finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(CORS(GZip(services orNotFound)))
 
       for {
