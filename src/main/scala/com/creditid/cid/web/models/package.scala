@@ -7,7 +7,7 @@ import com.github.ontio.crypto.Base58
 import enumeratum._
 import enumeratum.values._
 import io.circe.generic.JsonCodec
-import org.apache.commons.codec.digest.HmacUtils
+import org.apache.commons.codec.digest.{HmacAlgorithms, HmacUtils}
 import org.bouncycastle.util.encoders.Hex
 
 package object models {
@@ -98,7 +98,9 @@ package object models {
 
     private def verifyHmac(hmac: String, data: String*): Boolean = {
       // TODO: 共享的`key`从配置文件中读取，启动命令参数。
-      hmac.decodeHex sameElements HmacUtils.hmacSha256(??? /*key*/ , data.reduce((a, b) => a + b))
+
+      val hex: Array[Byte] = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, Array.empty[Byte]).hmac(data.reduce((a, b) => a + b))
+      hmac.decodeHex sameElements hex // HmacUtils.hmacSha256(??? /*key*/ , data.reduce((a, b) => a + b))
     }
 
     /*
