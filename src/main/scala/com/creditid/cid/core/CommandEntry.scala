@@ -28,11 +28,11 @@ object CommandEntry extends Enum[CommandEntry] {
 
   case object Run extends CommandEntry("start", "start application...") {
     val config: HttpConfig = ConfigSource.default.load[HttpConfig].getOrElse(HttpConfig("0.0.0.0", 8080))
-
+    var publicKey = opt[Option[String]](default = None)
     def stream[F[_] : Sync : ConcurrentEffect](scheduler: Scheduler)(implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
       val service = client.ontService
       val account = service.accountOf(client.LABEL, client.PASSWORD)
-      val ops = new routes.Routers[F](Http4sDsl[F])
+      val ops = new routes.Routers[F](Http4sDsl[F], publicKey.map(_.toArray.map(_.toByte)))
 
       for {
         done <- ops.init(service, account)
