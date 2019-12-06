@@ -28,6 +28,8 @@ import io.circe.generic.semiauto._
 package object routes {
 
   final class Routers[F[_] : Sync : Concurrent : Timer](dsl: Http4sDsl[F], publicKey: Option[Array[Byte]]) {
+    def illegalArgs = new IllegalArgumentException("参数`publicKey`不能为空")
+    implicit val hmacKey4Verify: Array[Byte] = publicKey.fold(throw illegalArgs)(a => a)
 
     def init(service: OntService[F], accountF: F[Account]): F[Boolean] = {
       val R: ContractOps[F] = ContractOps(service, accountF)
@@ -207,11 +209,11 @@ package object routes {
       }
     }
 
-    implicit val encoder: Encoder.AsObject[credit_use]  = deriveEncoder[credit_use]
+    implicit val encoder: Encoder.AsObject[credit_use] = deriveEncoder[credit_use]
 
     private val signingKey: MacSigningKey[HMACSHA256] = publicKey
-      .map(k=>HMACSHA256.buildKey[cats.Id](k))
-      .getOrElse(HMACSHA256.generateKey[cats.Id])
+      .map(k => HMACSHA256.buildKey[cats.Id](k))
+      .fold(throw illegalArgs)(a => a) // getOrElse(HMACSHA256.generateKey[cats.Id])
 
     private val jwtStatelessAuth = JWTAuthenticator.pstateless.inBearerToken[F, credit_use, HMACSHA256](
       expiryDuration = 10.minutes, //Absolute expiration time

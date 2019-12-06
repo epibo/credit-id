@@ -28,8 +28,8 @@ package object models {
   type 凭据状态 = CreditState
   type 返回状态 = RespCode
   type 随机数用途 = RandomUsage
-  
-  
+
+
   sealed abstract class CreditState(val name: String) extends EnumEntry
 
   object CreditState extends Enum[CreditState] with CirceEnum[CreditState] {
@@ -82,11 +82,11 @@ package object models {
   }
 
   implicit class Verify(req: request.Req) {
-    def verified[F[_] : Sync]: F[Boolean] = for {
+    def verified[F[_] : Sync](implicit bytes: Array[Byte]): F[Boolean] = for {
       bool <- Sync[F].delay(verified(req)).handleErrorWith(_ => Sync[F].pure(false))
     } yield bool
 
-    private def verified(req: request.Req): Boolean = (req: @unchecked) match {
+    private def verified(req: request.Req)(implicit bytes: Array[Byte]): Boolean = (req: @unchecked) match {
       case request.org_register(org_id, pubkeys, hmac) => verifyHmac(hmac, org_id, pubkeys.reduce { (a, b) => (a._1 + b._1, false) }._1)
       case request.org_upd_pubkey(org_id, pkey, hmac) => verifyHmac(hmac, org_id, pkey)
       case request.cid_register(cid, data, hmac) => verifyHmac(hmac, cid, data)
@@ -96,11 +96,9 @@ package object models {
       case request.credit_use(cid, org_id, random, hmac) => verifyHmac(hmac, cid, org_id, random)
     }
 
-    private def verifyHmac(hmac: String, data: String*): Boolean = {
-      // TODO: 共享的`key`从配置文件中读取，启动命令参数。
-
-      val hex: Array[Byte] = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, Array.empty[Byte]).hmac(data.reduce((a, b) => a + b))
-      hmac.decodeHex sameElements hex // HmacUtils.hmacSha256(??? /*key*/ , data.reduce((a, b) => a + b))
+    private def verifyHmac(hmac: String, data: String*)(implicit bytes: Array[Byte]): Boolean = {
+      val hex: Array[Byte] = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, bytes).hmac(data.reduce((a, b) => a + b))
+      hmac.decodeHex sameElements hex // HmacUtils.hmacSha256(bytes, data.reduce((a, b) => a + b))
     }
 
     /*
