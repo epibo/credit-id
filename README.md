@@ -1,3 +1,12 @@
+### 项目
+
+1. 打包
+sbt assembly
+
+2. 运行
+java -jar target/scala-2.12.2/credit-id_2.12-0.1.0.jar "start --public-key asdfasdfasdfaskdjffkalsfd "
+//目前问题：JWTAuthenticator.pstateless.inBearerToken 会在 runtime 出现 NoSuchMethodError
+
 ### 数字信用链与雄安数字身份公共服务平台间的交互需求					
 					
 * _（10月15日之前出接口）_

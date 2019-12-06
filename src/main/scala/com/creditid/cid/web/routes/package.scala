@@ -204,17 +204,17 @@ package object routes {
     }
 
 
-    implicit val encoder: Encoder[credit_use]  = deriveEncoder[credit_use]
-
+    //implicit val encoder: Encoder[credit_use]  = deriveEncoder[credit_use]
+    implicit val objectEncoder: Encoder.AsObject[credit_use]  = deriveEncoder[credit_use]
+    implicit val objectDecoder: Decoder[credit_use] = deriveDecoder[credit_use]
     private val signingKey: MacSigningKey[HMACSHA256] = publicKey
       .map(k=>HMACSHA256.buildKey[cats.Id](k))
       .getOrElse(HMACSHA256.generateKey[cats.Id])
 
     private val jwtStatelessAuth = JWTAuthenticator.pstateless.inBearerToken[F, credit_use, HMACSHA256](
-        expiryDuration = 10.minutes, //Absolute expiration time
-        maxIdle        = None,
-        signingKey     = signingKey
-      )
+         10.minutes, //Absolute expiration time
+         None,
+         signingKey)
 
     private val Auth = SecuredRequestHandler(jwtStatelessAuth)
 

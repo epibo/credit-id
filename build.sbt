@@ -2,7 +2,7 @@ name := "credit-id"
 
 version := version4DocConsistency
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.12.8"
 parallelExecution in Test := false
 
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
